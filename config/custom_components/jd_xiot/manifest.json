@@ -1,0 +1,20 @@
+{
+  "domain": "jd_xiot",
+  "name": "JingDong XIoT",
+  "codeowners": [
+    "@gkcity"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "application_credentials"
+  ],
+  "documentation": "https://www.home-assistant.io/integrations/jd_xiot",
+  "homekit": {},
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "quality_scale": "Platinum",
+  "requirements": [],
+  "ssdp": [],
+  "version": "0.0.1",
+  "zeroconf": []
+}
