@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import api
+from .core import api
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the light platform."""
+    _LOGGER.info("Set up the light platform")
     # # 1. 从 entry.runtime_data 获取 API 客户端
     # api = entry.runtime_data
 
@@ -41,3 +42,13 @@ async def async_setup_entry(
     # async_add_entities(entities)
     async_add_entities([])
 
+#
+# 修改 light.py：只创建被选中的设备
+#
+# async def async_setup_entry(hass, entry, async_add_entities):
+#     api = entry.runtime_data
+#     selected_ids = set(entry.data.get(CONF_DEVICE_IDS, []))
+#     all_devices = await api.async_get_devices_by_house(entry.data[CONF_HOUSE_ID])
+#     devices_to_add = [d for d in all_devices if d["id"] in selected_ids]
+#     entities = [JdLightEntity(api, d) for d in devices_to_add if d["type"] == "light"]
+#     async_add_entities(entities)

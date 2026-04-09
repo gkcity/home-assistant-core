@@ -2,13 +2,16 @@
 
 from aiohttp import ClientResponse, ClientSession
 
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
+
+from .typedef.joy_house import JoyHouse, joy_house_decode_array
 
 
 class JingDongXiotApi:
     """API client for JingDong XIoT."""
 
-    def __init__(self, hass, cookie: str, session: ClientSession = None):
+    def __init__(self, hass: HomeAssistant, cookie: str, session: ClientSession = None) -> None:
         """Initialize the API client."""
         self.hass = hass
         self._cookie = cookie
@@ -24,12 +27,16 @@ class JingDongXiotApi:
         kwargs["headers"] = headers
         return await self._session.request(method, url, **kwargs)
 
-    async def async_get_house(self):
+    # 读取房屋列表，用来测试API是否可以访问
+    async def async_get_house(self) -> tuple[bool, list[JoyHouse]]:
         """Get house list."""
         url = "https://api.m.jd.com/api?functionId=smarthome_screen_getHouseInfo&appid=device-debugger"
-        resp = await self._request("post", url)
+        resp = await self._request("get", url)
         data = await resp.json(content_type=None)
-        return data.get("code") == 0
+        if data.get("code") == 0:
+              houses = joy_house_decode_array(data.get('data').get('houses'))
+              return True, [houses]
+        return False, []
 
     # 根据京东 XIoT API 文档实现具体方法
     async def async_get_devices(self):

@@ -1,5 +1,31 @@
 {
     "config": {
+        "step": {
+            "user": {
+                "title": "京东小家 - 输入 Cookie",
+                "description": "请点击以下链接手动获取 Cookie: \n[{url}]({url})",
+                "data": {
+                  "cookie": "Cookie"
+                }
+            },
+            "house": {
+                "title": "京东小家 - 选择房屋",
+                "description": "请选择您要控制的房屋",
+                "data": {
+                  "house_id": "房屋"
+                }
+            },
+            "devices": {
+                "title": "京东小家 - 选择设备",
+                "description": "请选择要添加到 Home Assistant 的设备",
+                "data": {
+                    "device_ids": "设备列表"
+                }
+            },
+            "pick_implementation": {
+                "title": "[%key:common::config_flow::title::oauth2_pick_implementation%]"
+            }
+        },
         "abort": {
             "already_configured": "Account is already configured",
             "already_in_progress": "Configuration flow is already in progress",
@@ -15,11 +41,6 @@
         },
         "create_entry": {
             "default": "Successfully authenticated"
-        },
-        "step": {
-            "pick_implementation": {
-                "title": "Pick authentication method"
-            }
         }
     }
 }
