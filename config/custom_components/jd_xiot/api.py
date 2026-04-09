@@ -1,54 +1,126 @@
-"""API for JingDong XIoT bound to Home Assistant OAuth."""
+"""API for JingDong XIoT using Cookie."""
 
-from asyncio import run_coroutine_threadsafe
+from aiohttp import ClientResponse, ClientSession
 
-from aiohttp import ClientSession
-import my_pypi_package
-
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_entry_oauth2_flow
-
-# TODO the following two API examples are based on our suggested best practices
-# for libraries using OAuth2 with requests or aiohttp. Delete the one you won't use.
-# For more info see the docs at https://developers.home-assistant.io/docs/api_lib_auth/#oauth2.
+from homeassistant.helpers import aiohttp_client
 
 
-class ConfigEntryAuth(my_pypi_package.AbstractAuth):
-    """Provide JingDong XIoT authentication tied to an OAuth2 based config entry."""
+class JingDongXiotApi:
+    """API client for JingDong XIoT."""
 
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        oauth_session: config_entry_oauth2_flow.OAuth2Session,
-    ) -> None:
-        """Initialize JingDong XIoT Auth."""
+    def __init__(self, hass, cookie: str, session: ClientSession = None):
+        """Initialize the API client."""
         self.hass = hass
-        self.session = oauth_session
-        super().__init__(self.session.token)
+        self._cookie = cookie
+        if session is None:
+            self._session = aiohttp_client.async_get_clientsession(hass)
+        else:
+            self._session = session
 
-    def refresh_tokens(self) -> str:
-        """Refresh and return new JingDong XIoT tokens using Home Assistant OAuth2 session."""
-        run_coroutine_threadsafe(
-            self.session.async_ensure_token_valid(), self.hass.loop
-        ).result()
+    async def _request(self, method: str, url: str, **kwargs) -> ClientResponse:
+        """Make an HTTP request with the cookie."""
+        headers = kwargs.pop("headers", {})
+        headers["Cookie"] = self._cookie
+        kwargs["headers"] = headers
+        return await self._session.request(method, url, **kwargs)
 
-        return self.session.token["access_token"]
+    async def async_get_house(self):
+        """Get house list."""
+        url = "https://api.m.jd.com/api?functionId=smarthome_screen_getHouseInfo&appid=device-debugger"
+        resp = await self._request("post", url)
+        data = await resp.json(content_type=None)
+        return data.get("code") == 0
 
+    # 根据京东 XIoT API 文档实现具体方法
+    async def async_get_devices(self):
+        """Get device list."""
 
-class AsyncConfigEntryAuth(my_pypi_package.AbstractAuth):
-    """Provide JingDong XIoT authentication tied to an OAuth2 based config entry."""
+        # 1. getHouses
+        # GET https://api.m.jd.com/api?functionId=smarthome_screen_getHouseInfo&appid=device-debugger
+        # 应答
+        # {
+        #    "traceId": "7692701.80569.17751935324687181",
+        #    "code": 0,
+        #       "data": {
+        #          "houses": [
+        #            {
+        #                "rooms": [
+        #                    {
+        #                        "isDefault": true,
+        #                        "devices": [
+        #                            {
+        #                                "userDeviceId": 12632,
+        #                                "did": "00@10wXH"
+        #                            },
+        #                        ],
+        #                        "name": "默认",
+        #                        "config": "",
+        #                        "roomId": 4994
+        #                    }
+        #                ],
+        #                "houseId": 4450,
+        #                "name": "我的房屋"
+        #            }
+        #        ]
+        #    },
+        #    "message": ""
+        # }
+        url = "https://api.m.jd.com/api?functionId=smarthome_screen_getHouseInfo&appid=device-debugger"
+        resp = await self._request("post", url)
+        # return await resp.json()
+        data = await resp.json(content_type=None)
+        return data.get("code") == 0
 
-    def __init__(
-        self,
-        websession: ClientSession,
-        oauth_session: config_entry_oauth2_flow.OAuth2Session,
-    ) -> None:
-        """Initialize JingDong XIoT auth."""
-        super().__init__(websession)
-        self._oauth_session = oauth_session
+        # 2. getDevices
+        # POST https://api.m.jd.com/api?functionId=smarthome_screen_getDeviceInfo&appid=device-debugger&body=%7B%22userDeviceIds%22:%5B12632,11324,10743,10609,10600,10599,10517,10466,10465,10463,10358,10356,10352,10345,10339,10322,10321,10315,10199,8727,6669,4681%5D%7D
+        # body = { "userDeviceIds": [12632, 11324] }
+        # 应答
+        # {
+        #    "traceId": "7693258.80569.17751935326326840",
+        #    "code": 0,
+        #    "data": {
+        #        "devices": [
+        #            {
+        #                "summary": {
+        #                    "members": [],
+        #                    "online": false,
+        #                    "type": "urn:jd-spec:device:gateway:0000012d:jd:jdzhp02qs:1"
+        #                },
+        #                "additional": {
+        #                    "productId": 14775695,
+        #                    "modelId": 0,
+        #                    "name": "京东生活家智慧屏12英寸",
+        #                    "userDeviceId": 4681,
+        #                    "favorite": false,
+        #                    "jdMpAppId": "",
+        #                    "isFavorite": false
+        #                },
+        #                "shadows": [],
+        #                "userDeviceId": 8727,
+        #                "did": "00@10wKo"
+        #            }
+        #        ],
+        #        "products": [
+        #            {
+        #                "productId": 6765636,
+        #                "upgrade": [
+        #                    "gateway"
+        #                ],
+        #                "icon": "https://smart-static-small.jd.com/xiot/product/firmware/6765636/371b20eeb1bc4d61/KGtV0D.svg",
+        #                "jdMpAppId": "",
+        #                "organization": "jd",
+        #                "recommendNames": [
+        #                    "开关"
+        #                ],
+        #                "name": "京东生活家智能开关双开",
+        #                "model": "jdzn2kg02lf",
+        #                "provisioning": "subdevice"
+        #            }
+        #        ]
+        #    },
+        #    "message": ""
+        # }
 
-    async def async_get_access_token(self) -> str:
-        """Return a valid access token."""
-        await self._oauth_session.async_ensure_token_valid()
-
-        return self._oauth_session.token["access_token"]
+        # url = "https://api.m.jd.com/api?functionId=smarthome_screen_getDeviceInfo&appid=device-debugger&body="
+        # resp = await self._request("post", url)
+        # return await resp.json()

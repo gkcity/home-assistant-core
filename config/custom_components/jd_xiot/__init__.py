@@ -6,50 +6,39 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import aiohttp_client
-from homeassistant.helpers.config_entry_oauth2_flow import (
-    ImplementationUnavailableError,
-    OAuth2Session,
-    async_get_config_entry_implementation,
-)
 
 from . import api
+from .const import CONF_COOKIE
 
-# TODO List the platforms that you want to support.
-# For your initial PR, limit it to 1 platform.
+# 支持的设备类型列表
 _PLATFORMS: list[Platform] = [Platform.LIGHT]
 
-# TODO Create ConfigEntry type alias with ConfigEntryAuth or AsyncConfigEntryAuth object
-# TODO Rename type alias and update all entry annotations
-type New_NameConfigEntry = ConfigEntry[api.AsyncConfigEntryAuth]
+# 定义配置条目的类型
+type JdXiotConfigEntry = ConfigEntry[api.JingDongXiotApi]
 
 
-# # TODO Update entry annotation
-async def async_setup_entry(hass: HomeAssistant, entry: New_NameConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: JdXiotConfigEntry) -> bool:
     """Set up JingDong XIoT from a config entry."""
+    cookie = entry.data[CONF_COOKIE]
+
+    # 初始化 API 客户端
+    api_client = api.JingDongXiotApi(hass, cookie)
+
+    # 测试 API 连接是否正常
     try:
-        implementation = await async_get_config_entry_implementation(hass, entry)
-    except ImplementationUnavailableError as err:
-        raise ConfigEntryNotReady(
-            "OAuth2 implementation temporarily unavailable, will retry"
-        ) from err
+        await api_client.async_get_house()
+    except Exception as err:
+        raise ConfigEntryNotReady(f"Failed to connect to JD API: {err}") from err
 
-    session = OAuth2Session(hass, entry, implementation)
+    # 将 API 客户端存入 runtime_data，供后续平台文件（如 light.py）使用
+    entry.runtime_data = api_client
 
-    # If using a requests-based API lib
-    # entry.runtime_data = api.ConfigEntryAuth(hass, session)
-
-    # If using an aiohttp-based API lib
-    entry.runtime_data = api.AsyncConfigEntryAuth(
-        aiohttp_client.async_get_clientsession(hass), session
-    )
-
+    # 保存设备类型列表
     await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
 
     return True
 
 
-# TODO Update entry annotation
-async def async_unload_entry(hass: HomeAssistant, entry: New_NameConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: JdXiotConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, _PLATFORMS)
