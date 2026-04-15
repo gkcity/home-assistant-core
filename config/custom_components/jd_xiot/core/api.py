@@ -1,17 +1,23 @@
 """API for JingDong XIoT using Cookie."""
 
+import json
+from urllib.parse import quote
+
 from aiohttp import ClientResponse, ClientSession
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 
+from .typedef.joy_device_detail import JoyDeviceDetail, joy_device_detail_decode_array
 from .typedef.joy_house import JoyHouse, joy_house_decode_array
 
 
 class JingDongXiotApi:
     """API client for JingDong XIoT."""
 
-    def __init__(self, hass: HomeAssistant, cookie: str, session: ClientSession = None) -> None:
+    def __init__(
+        self, hass: HomeAssistant, cookie: str, session: ClientSession = None
+    ) -> None:
         """Initialize the API client."""
         self.hass = hass
         self._cookie = cookie
@@ -27,16 +33,41 @@ class JingDongXiotApi:
         kwargs["headers"] = headers
         return await self._session.request(method, url, **kwargs)
 
-    # 读取房屋列表，用来测试API是否可以访问
     async def async_get_house(self) -> tuple[bool, list[JoyHouse]]:
         """Get house list."""
         url = "https://api.m.jd.com/api?functionId=smarthome_screen_getHouseInfo&appid=device-debugger"
         resp = await self._request("get", url)
         data = await resp.json(content_type=None)
         if data.get("code") == 0:
-              houses = joy_house_decode_array(data.get('data').get('houses'))
-              return True, [houses]
+            houses = joy_house_decode_array(data.get("data").get("houses"))
+            return True, [houses]
         return False, []
+
+    async def async_get_devices_info(
+        self, userDeviceIds: list[int]
+    ) -> list[JoyDeviceDetail]:
+        """Get devices info."""
+        body_dict = {"userDeviceIds": userDeviceIds}
+        body_json = json.dumps(body_dict, separators=(",", ":"))
+        body_encoded = quote(body_json)  # URL 编码
+        url = (
+            "https://api.m.jd.com/api?functionId=smarthome_screen_getDeviceInfo&appid=device-debugger&body="
+            + body_encoded
+        )
+        resp = await self._request("get", url)
+        data = await resp.json(content_type=None)
+        if data.get("code") == 0:
+            devices: list[JoyDeviceDetail] = joy_device_detail_decode_array(
+                data.get("data", {}).get("devices", [])
+            )
+            return devices
+        return []
+
+    async def async_control_device(
+        self, user_device_id: int, command: str, value
+    ) -> bool:
+        """Control device."""
+        return True
 
     # 根据京东 XIoT API 文档实现具体方法
     async def async_get_devices(self):

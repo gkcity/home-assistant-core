@@ -38,7 +38,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._houses: list[JoyHouse] = None  # 房屋列表
         self._selected_house: JoyHouse = None
         self._devices: list[JoyDeviceDetail] = None  # 设备列表
-        self._selected_device_ids: list[str] = []
+        self._selected_device_ids: list[int] = []
 
     async def async_step_user(self, user_input=None):
         """Step 1: Input cookie."""
@@ -93,7 +93,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_devices(self, user_input=None):
         """Step 3: Select devices to add."""
         if user_input is not None:
-            self._selected_device_ids = user_input[SELECTED_DEVICE_IDS]
+            self._selected_device_ids = [
+                int(id_str) for id_str in user_input[SELECTED_DEVICE_IDS]
+            ]
             # 创建配置条目
             return self.async_create_entry(
                 title="JingDong XIoT",
@@ -106,11 +108,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         # 构建设备多选框
         device_options = {
-            device[
-                "did"
-            ]: f"{device['additional']['name']} ({device['summary']['type']})"
+            str(
+                device["userDeviceId"]
+            ): f"{device['additional']['name']} ({device['summary']['type']})"
             for device in self._devices
         }
+
         return self.async_show_form(
             step_id="devices",
             data_schema=vol.Schema(
