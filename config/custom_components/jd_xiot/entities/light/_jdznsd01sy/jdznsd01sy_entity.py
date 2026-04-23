@@ -119,5 +119,9 @@ class Jdznsd01syEntity(LightEntity):
 
     async def async_update(self) -> None:
         """Update Status."""
+        _LOGGER.info("Update")
+        # ================================================
+        # HA会调用async_update, 在这里更新属性值
+        # ================================================
         self._attr_available = True
         self.async_write_ha_state()
