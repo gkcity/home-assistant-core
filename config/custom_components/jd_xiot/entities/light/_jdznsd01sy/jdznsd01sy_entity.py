@@ -2,20 +2,18 @@
 
 import logging
 
-from jd_xiot.core.api import JingDongXiotApi
-from jd_xiot.core.typedef.joy_device_detail import JoyDeviceDetail
-
+# from ....core.api import JingDongXiotApi
+# from ....core.typedef.joy_device_detail import JoyDeviceDetail
+# from ..jd_light_mapping import register_light_entity
+from custom_components.jd_xiot.core.api import JingDongXiotApi
+from custom_components.jd_xiot.core.typedef.joy_device_detail import JoyDeviceDetail
+from custom_components.jd_xiot.entities.light.jd_light_mapping import (
+    register_light_entity,
+)
 from xiot_core.support.typedef.controller.device_controller import DeviceController
 from xiot_core_device_controller.jd._light._jdznsd01sy.jdznsd01sy import Jdznsd01sy
-from xiot_core_device_controller.jd._light._jdznsd01sy._light.light import Light
-from xiot_core_device_controller.jd._light._jdznsd01sy._light.properties.on import On
 
-from homeassistant.components.light import (
-    LightEntity,
-    # 灯光支持的功能标志（2026 最新标准）
-    ColorMode,
-    LightEntityFeature,
-)
+from homeassistant.components.light import ColorMode, LightEntity, LightEntityFeature
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,7 +23,9 @@ _LOGGER = logging.getLogger(__name__)
 # ------------------------------
 @register_light_entity
 class Jdznsd01syEntity(LightEntity):
-    """Jdznsd01sy"""
+    """Jdznsd01sy Entity."""
+
+    TYPE: str = Jdznsd01sy.TYPE
 
     # ------------------------------
     # 第二步：初始化方法（存储灯的状态、设备信息）
@@ -36,8 +36,9 @@ class Jdznsd01syEntity(LightEntity):
         api: JingDongXiotApi,
         device_info: JoyDeviceDetail,
     ) -> None:
-        """初始化灯光状态"""
+        """Init Light Entity."""
         # 保存
+        self._did = device_info["did"]
         self._api: JingDongXiotApi = api
         self._info: JoyDeviceDetail = device_info
         self._device: Jdznsd01sy | None = None
@@ -51,22 +52,19 @@ class Jdznsd01syEntity(LightEntity):
         self._is_on = False  # 开关状态
         self._brightness = 255  # 亮度 0-255
         self._rgb_color = (255, 255, 255)  # RGB 颜色 (R, G, B)
-        self._color_temp = 370  # 色温 单位：mireds（冷<->暖）
-        self._color_mode = ColorMode.RGB  # 当前激活的颜色模式
+        self._color_temp = 2700  # 色温
+        self._color_mode = ColorMode.COLOR_TEMP
 
         # 必须：声明实体唯一 ID（不能重复，用于 HA 识别设备）
-        self._attr_unique_id: str = f"jd_xiot_light_{self._device_id}"
+        self._attr_unique_id: str = f"jd_xiot_light_{self._did}"
 
         # 必须：实体名称
-        self._attr_name: str = device_info.get("additional", {}).get(
-            "name", self._device_id
-        )
+        self._attr_name: str = device_info.get("additional", {}).get("name", self._did)
 
         # 必须：声明这个灯支持哪些**颜色模式**（核心！）
         # 2026 最新标准：用 ColorMode 枚举，不要用旧版 SUPPORT_*
         self._attr_supported_color_modes: set[ColorMode] = {
             ColorMode.COLOR_TEMP,  # 支持色温
-            ColorMode.BRIGHTNESS,  # 支持亮度
         }
 
         # 可选：支持的额外功能（场景、效果等）
@@ -78,60 +76,47 @@ class Jdznsd01syEntity(LightEntity):
         self._attr_color_temp_kelvin: int | None = None  # 开尔文值
         self._attr_hs_color: tuple[float, float] | None = None
         self._attr_available: bool = True
-
-        # self._attr_min_color_temp_kelvin = 2500
-        # self._attr_max_color_temp_kelvin = 5000
-
-        # self._api: JingDongXiotApi = api
-        # self._user_device_id: int = device_info["userDeviceId"]
-        # self._device_id: str = device_info["did"]
-        # self._device_info: JoyDeviceDetail = device_info
+        self._attr_min_color_temp_kelvin = 2700
+        self._attr_max_color_temp_kelvin = 6500
 
     # ------------------------------
     # 第三步：必须实现的属性（HA 读取状态用）
     # ------------------------------
     @property
     def is_on(self) -> bool:
-        """
-        【必须实现】
-        HA 读取：灯是否开启
-        返回 True/False
-        """
+        """Get OnOff Status."""
         if self._device is None:
             return False
-        else:
-            return self._device.light_().on_().get_value()
+        return self._device.light_().on_().get_value()
 
     @property
     def brightness(self) -> int | None:
-        """
-        【可选，建议实现】
-        HA 读取：当前亮度
-        取值范围: 0 ~ 255
-        """
+        """Get Brightness."""
         if self._device is None:
             return None
-        else:
-            return self._device.light_().brightness_().get_value()
+        return 80
+        # return self._device.light_().brightness_().get_value()
 
     @property
-    def rgb_color(self) -> tuple[int, int, int] | None:
-        """
-        【可选】
-        HA 读取：当前 RGB 颜色
-        返回 (R, G, B)，每个值 0-255
-        """
-        return None
+    def color_temp_kelvin(self) -> int | None:
+        """Get Color Temperature."""
+        if self._device is None:
+            return None
+        return 2700
+
+    # ------------------------------
+    # 修复点3：必须实现 color_mode 属性（HA 2026 强制要求）
+    # ------------------------------
+    @property
+    def color_mode(self) -> ColorMode | None:
+        """Get Color Mode."""
+        return self._color_mode
 
     # ------------------------------
     # 第四步：必须实现的控制方法（HA 操作灯时调用）
     # ------------------------------
     async def async_turn_on(self, **kwargs) -> None:
-        """
-        【必须实现】
-        HA 执行开灯操作时调用这个方法
-        kwargs: 包含所有控制参数(亮度、RGB、色温等)
-        """
+        """Set On."""
         # 1. 标记灯为开启
         self._is_on = True
 
@@ -159,10 +144,7 @@ class Jdznsd01syEntity(LightEntity):
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
-        """
-        【必须实现】
-        HA 执行关灯操作时调用这个方法
-        """
+        """Set Off."""
         # 1. 标记灯为关闭
         self._is_on = False
 

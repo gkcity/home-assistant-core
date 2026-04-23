@@ -76,7 +76,7 @@ async def async_setup_entry(
     for detail in details:
         device_type: str = detail.get("summary", {}).get("type", "").lower()
         entity = create_light_entity(device_type, api, detail)
-        if entity is None:
+        if entity is not None:
             _LOGGER.info("Add light: %s", device_type)
             entities.append(entity)
         else:

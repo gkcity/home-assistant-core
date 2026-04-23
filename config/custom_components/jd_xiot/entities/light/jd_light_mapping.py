@@ -53,4 +53,4 @@ def create_light_entity(device_type: str, *args, **kwargs) -> LightEntity | None
     if clazz is None:
         _LOGGER.info("Entity Class not found: %s", device_type)
         return None
-    return clazz(*args, device, **kwargs)
+    return clazz(device, *args, **kwargs)
