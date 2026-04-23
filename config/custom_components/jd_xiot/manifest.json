@@ -15,7 +15,7 @@
   "quality_scale": "Platinum",
   "requirements": [
     "xiot-core>=0.0.5",
-    "xiot-core-device-controller>=0.0.1"
+    "xiot-core-device-controller>=0.0.5"
   ],
   "ssdp": [],
   "version": "0.0.1",
