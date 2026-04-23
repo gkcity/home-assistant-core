@@ -74,6 +74,7 @@ class Jdznsd01syEntity(LightEntity):
 
         if isinstance(controller, Jdznsd01sy):
             self._device: Jdznsd01sy = controller
+            self._device.set_operator(api.set_property, api.invoke_action)
             _LOGGER.info("Init: %s", self._did)
         else:
             self._device = None
@@ -87,23 +88,19 @@ class Jdznsd01syEntity(LightEntity):
         """Set On."""
         _LOGGER.info("Turn On: %s", kwargs)
 
-        # 1. 标记灯为开启
+        # 1. 开
+        await self._device.light_().on_().set(True)
         self._attr_is_on = True
 
-        # 2. 解析色温
-        # if color_temp := kwargs.get("color_temp_kelvin"):
-        #     self._color_temp = color_temp
-        #     self._color_mode = ColorMode.COLOR_TEMP  # 切换到色温模式
+        # 2. 色温
+        if color_temp := kwargs.get("color_temp_kelvin"):
+            await self._device.light_().color_temperature_().set(color_temp)
+            self._attr_color_temp_kelvin = color_temp
 
-        # 3. 解析亮度
+        # 3. 亮度
         if brightness := kwargs.get("brightness"):
+            await self._device.light_().brightness_().set(brightness)
             self._attr_brightness = brightness
-
-        # ========================
-        # 【你的核心业务逻辑】
-        # 在这里写：发送指令到你的硬件/API/设备
-        # 例：await self._device.turn_on(brightness, rgb, color_temp)
-        # ========================
 
         # 通知 HA：状态已更新，刷新界面
         self.async_write_ha_state()
@@ -112,6 +109,7 @@ class Jdznsd01syEntity(LightEntity):
         """Set Off."""
         _LOGGER.info("Turn Off: %s", kwargs)
 
+        await self._device.light_().on_().set(False)
         self._attr_is_on = False
 
         # 通知 HA：状态已更新

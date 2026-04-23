@@ -1,15 +1,20 @@
 """API for JingDong XIoT using Cookie."""
 
 import json
+import logging
 from urllib.parse import quote
 
 from aiohttp import ClientResponse, ClientSession
+from xiot_core.spec.typedef.operation.action_operation import ActionOperation
+from xiot_core.spec.typedef.operation.property_operation import PropertyOperation
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 
 from .typedef.joy_device_detail import JoyDeviceDetail, joy_device_detail_decode_array
 from .typedef.joy_house import JoyHouse, joy_house_decode_array
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class JingDongXiotApi:
@@ -63,11 +68,22 @@ class JingDongXiotApi:
             return devices
         return []
 
-    async def async_control_device(
-        self, user_device_id: int, command: str, value
-    ) -> bool:
-        """Control device."""
-        return True
+    async def set_property(self, p: PropertyOperation) -> PropertyOperation:
+        """Set Property."""
+        _LOGGER.info("SetProperty")
+        return p
+
+    async def get_property(self, p: PropertyOperation) -> PropertyOperation:
+        """Get Property."""
+        _LOGGER.info("GetProperty")
+        p.status = -1
+        return p
+
+    async def invoke_action(self, a: ActionOperation) -> ActionOperation:
+        """Invoke Action."""
+        _LOGGER.info("InvokeAction")
+        a.status = -1
+        return a
 
     # 根据京东 XIoT API 文档实现具体方法
     async def async_get_devices(self):
