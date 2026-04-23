@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any, TypedDict
 
+from xiot_core_device_controller.device_mapping import create_device
+
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
@@ -83,8 +85,10 @@ async def async_setup_entry(
     # 过滤出属于 light 平台的设备
     for detail in details:
         deviceType: str = detail.get("summary", {}).get("type", "").lower()
-        if deviceType == "light":
-            entities.append(JdLightEntity(api, detail))
+        device = create_device(deviceType)
+        if device is not None:
+            if device.type.name == "light":
+                entities.append(JdLightEntity(api, detail))
         else:
             _LOGGER.info(
                 "Skipping non-light device %s (type: %s)",
