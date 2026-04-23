@@ -2,9 +2,6 @@
 
 import logging
 
-# from ....core.api import JingDongXiotApi
-# from ....core.typedef.joy_device_detail import JoyDeviceDetail
-# from ..jd_light_mapping import register_light_entity
 from custom_components.jd_xiot.core.api import JingDongXiotApi
 from custom_components.jd_xiot.core.typedef.joy_device_detail import JoyDeviceDetail
 from custom_components.jd_xiot.entities.light.jd_light_mapping import (
@@ -37,7 +34,6 @@ class Jdznsd01syEntity(LightEntity):
         device_info: JoyDeviceDetail,
     ) -> None:
         """Init Light Entity."""
-        super().__init__()
 
         # 保存
         self._did = device_info["did"]
@@ -85,40 +81,6 @@ class Jdznsd01syEntity(LightEntity):
             _LOGGER.error("Init error: %s ", {type(controller).__name__})
 
     # ------------------------------
-    # 第三步：必须实现的属性（HA 读取状态用）
-    # ------------------------------
-    # @property
-    # def is_on(self) -> bool:
-    #     """Get OnOff Status."""
-    #     if self._device is None:
-    #         return False
-    #     return True
-    #     # return self._device.light_().on_().get_value()
-
-    # @property
-    # def brightness(self) -> int | None:
-    #     """Get Brightness."""
-    #     if self._device is None:
-    #         return None
-    #     return 80
-    #     # return self._device.light_().brightness_().get_value()
-
-    # @property
-    # def color_temp_kelvin(self) -> int | None:
-    #     """Get Color Temperature."""
-    #     if self._device is None:
-    #         return None
-    #     return 2700
-
-    # # ------------------------------
-    # # 修复点3：必须实现 color_mode 属性（HA 2026 强制要求）
-    # # ------------------------------
-    # @property
-    # def color_mode(self) -> ColorMode | None:
-    #     """Get Color Mode."""
-    #     return self._color_mode
-
-    # ------------------------------
     # 第四步：必须实现的控制方法（HA 操作灯时调用）
     # ------------------------------
     async def async_turn_on(self, **kwargs) -> None:
@@ -128,17 +90,12 @@ class Jdznsd01syEntity(LightEntity):
         # 1. 标记灯为开启
         self._attr_is_on = True
 
-        # 2. 解析 RGB 颜色（如果用户设置了颜色）
-        # if rgb := kwargs.get("rgb_color"):
-        #     self._rgb_color = rgb
-        #     self._color_mode = ColorMode.RGB  # 切换到 RGB 模式
-
-        # 3. 解析色温（如果用户设置了色温）
-        # if color_temp := kwargs.get("color_temp"):
+        # 2. 解析色温
+        # if color_temp := kwargs.get("color_temp_kelvin"):
         #     self._color_temp = color_temp
         #     self._color_mode = ColorMode.COLOR_TEMP  # 切换到色温模式
 
-        # 4. 解析亮度（通用所有模式）
+        # 3. 解析亮度
         if brightness := kwargs.get("brightness"):
             self._attr_brightness = brightness
 
