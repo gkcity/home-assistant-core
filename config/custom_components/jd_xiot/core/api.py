@@ -5,8 +5,12 @@ import logging
 from urllib.parse import quote
 
 from aiohttp import ClientResponse, ClientSession
+from xiot_core.spec.codec.operation.property_operation_codec import (
+    PropertyOperationCodec,
+)
 from xiot_core.spec.typedef.operation.action_operation import ActionOperation
 from xiot_core.spec.typedef.operation.property_operation import PropertyOperation
+from xiot_core.spec.typedef.status.status import Status
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
@@ -70,7 +74,34 @@ class JingDongXiotApi:
 
     async def set_property(self, p: PropertyOperation) -> PropertyOperation:
         """Set Property."""
-        _LOGGER.info("SetProperty")
+        body_dict = {
+            "userDeviceId": p.context,
+            "properties": PropertyOperationCodec.Set.QUERY.encode([p]),
+        }
+        body_json = json.dumps(body_dict, separators=(",", ":"))
+        _LOGGER.info("SetProperty: %s", body_json)
+        body_encoded = quote(body_json)  # URL 编码
+        url = (
+            "https://api.m.jd.com/api?functionId=smarthome_app_writeDeviceProperty&appid=device-debugger&body="
+            + body_encoded
+        )
+        resp = await self._request("get", url)
+        data = await resp.json(content_type=None)
+        _LOGGER.info("SetProperty.Response: %s", data)
+        if data.get("code") == "0":
+            properties: list[PropertyOperation] = (
+                PropertyOperationCodec.Set.RESULT.decode(
+                    data.get("result", {}).get("properties", [])
+                )
+            )
+            result: PropertyOperation | None = properties[0]
+            if result is not None:
+                return result
+            p.status = Status.UNDEFINED
+            p.description = "result is empty"
+        else:
+            p.status = Status.INTERNAL_ERROR
+            p.description = "result error"
         return p
 
     async def get_property(self, p: PropertyOperation) -> PropertyOperation:

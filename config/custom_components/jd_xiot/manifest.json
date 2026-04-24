@@ -14,8 +14,8 @@
   "iot_class": "cloud_polling",
   "quality_scale": "Platinum",
   "requirements": [
-    "xiot-core>=0.0.8",
-    "xiot-core-device-controller>=0.0.8"
+    "xiot-core>=0.0.10",
+    "xiot-core-device-controller>=0.0.10"
   ],
   "ssdp": [],
   "version": "0.0.1",

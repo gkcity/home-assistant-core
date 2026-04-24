@@ -1,4 +1,4 @@
-"""Light Jdznsd01sy."""
+"""Light Jdznsd02sy."""
 
 import logging
 
@@ -8,7 +8,7 @@ from custom_components.jd_xiot.entities.light.jd_light_mapping import (
     register_light_entity,
 )
 from xiot_core.support.typedef.controller.device_controller import DeviceController
-from xiot_core_device_controller.jd._light._jdznsd01sy.jdznsd01sy import Jdznsd01sy
+from xiot_core_device_controller.jd._light._jdznsd02sy.jdznsd02sy import Jdznsd02sy
 
 from homeassistant.components.light import ColorMode, LightEntity, LightEntityFeature
 
@@ -19,10 +19,10 @@ _LOGGER = logging.getLogger(__name__)
 # 第一步：定义你的灯光实体类
 # ------------------------------
 @register_light_entity
-class Jdznsd01syEntity(LightEntity):
-    """Jdznsd01sy Entity."""
+class Jdznsd02syEntity(LightEntity):
+    """Jdznsd02sy Entity."""
 
-    TYPE: str = Jdznsd01sy.TYPE
+    TYPE: str = Jdznsd02sy.TYPE
 
     # ------------------------------
     # 第二步：初始化方法（存储灯的状态、设备信息）
@@ -38,7 +38,7 @@ class Jdznsd01syEntity(LightEntity):
         # 保存
         self._api: JingDongXiotApi = api
         self._detail: JoyDeviceDetail = detail
-        self._device: Jdznsd01sy | None = None
+        self._device: Jdznsd02sy | None = None
 
         # 必须：声明实体唯一 ID（不能重复，用于 HA 识别设备）
         self._attr_unique_id: str = f"jd_xiot_light_{controller.did}"
@@ -68,8 +68,8 @@ class Jdznsd01syEntity(LightEntity):
         self._attr_max_color_temp_kelvin = 6500
         self._attr_hs_color: tuple[float, float] | None = None
 
-        if isinstance(controller, Jdznsd01sy):
-            self._device: Jdznsd01sy = controller
+        if isinstance(controller, Jdznsd02sy):
+            self._device: Jdznsd02sy = controller
             self._device.set_operator(
                 api.set_property, api.invoke_action, detail["userDeviceId"]
             )
