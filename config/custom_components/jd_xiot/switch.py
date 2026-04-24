@@ -70,7 +70,7 @@ async def async_setup_entry(
             )
 
     if not entities:
-        _LOGGER.warning("No light devices found among selected device IDs")
+        _LOGGER.warning("No switch devices found among selected device IDs")
 
     # 5. 将实体添加到 HA
     async_add_entities(entities)
