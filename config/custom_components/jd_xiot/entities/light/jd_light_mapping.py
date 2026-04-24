@@ -23,7 +23,7 @@ def register_light_entity(cls):
     Returns:
         传入的设备控制器类
     """
-    _LOGGER.info("Register LightEntity: %s", cls.TYPE)
+    _LOGGER.info("Register: %s", cls.TYPE)
     _entities[cls.TYPE] = cls
     return cls
 
@@ -34,9 +34,9 @@ def create_light_entity(
     """根据 TYPE 字符串创建灯光实例.
 
     Args:
-        device_type: 设备类型字符串
-        *args: 设备类初始化位置参数
-        **kwargs: 设备类初始化关键字参数
+        device_type: Device Type
+        api: API
+        detail: Device Detail Info
 
     Returns:
         初始化后的灯光实例，若类型不存在则返回 None

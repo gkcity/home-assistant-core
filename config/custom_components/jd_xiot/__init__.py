@@ -1,7 +1,5 @@
 """The JingDong XIoT integration."""
 
-# from __future__ import annotations
-
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -15,7 +13,7 @@ from .core.const import JD_COOKIE
 _LOGGER = logging.getLogger(__name__)
 
 # 支持的设备类型列表
-_PLATFORMS: list[Platform] = [Platform.LIGHT]
+_PLATFORMS: list[Platform] = [Platform.LIGHT, Platform.SWITCH]
 
 # 定义配置条目的类型
 type JdXiotConfigEntry = ConfigEntry[api.JingDongXiotApi]

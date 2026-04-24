@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.light import LightEntity
+from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -12,21 +12,20 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .core.api import JingDongXiotApi
 from .core.const import SELECTED_DEVICE_IDS
 from .core.typedef.joy_device_detail import JoyDeviceDetail
-from .entities.light.jd_light_mapping import create_light_entity
+from .entities.switch.jd_switch_mapping import create_switch_entity
 
 _LOGGER = logging.getLogger(__name__)
 
 # 定义配置条目的类型
 type JdXiotConfigEntry = ConfigEntry[JingDongXiotApi]
 
-
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: JdXiotConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the light platform."""
-    _LOGGER.info("Set up the light platform")
+    """Set up the switch platform."""
+    _LOGGER.info("Set up the switch platform")
 
     # 1. 从 entry.runtime_data 获取 API 客户端
     api: JingDongXiotApi = entry.runtime_data
@@ -52,18 +51,20 @@ async def async_setup_entry(
         return
 
     # 4. 实体列表
-    entities: list[LightEntity] = []
+    entities: list[SwitchEntity] = []
 
     # 5. 创建实体
     for detail in details:
         device_type: str = detail.get("summary", {}).get("type", "").lower()
-        entity = create_light_entity(device_type, api, detail)
-        if entity is not None:
-            _LOGGER.info("Add light: %s", device_type)
-            entities.append(entity)
+        array: list[SwitchEntity] = create_switch_entity(device_type, api, detail)
+        if len(array) > 0:
+            _LOGGER.info("Add switches: %d", len(array))
+            for entity in array:
+                _LOGGER.info("Add switch: %s", device_type)
+                entities.append(entity)
         else:
             _LOGGER.info(
-                "Skipping non-light device %s (type: %s)",
+                "Skipping non-switch device %s (type: %s)",
                 detail.get("did"),
                 device_type,
             )
