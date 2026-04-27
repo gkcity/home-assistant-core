@@ -5,6 +5,7 @@ import logging
 from urllib.parse import quote
 
 from aiohttp import ClientResponse, ClientSession
+from xiot_core.spec.codec.operation.action_operation_codec import ActionOperationCodec
 from xiot_core.spec.codec.operation.property_operation_codec import (
     PropertyOperationCodec,
 )
@@ -113,7 +114,34 @@ class JingDongXiotApi:
     async def invoke_action(self, a: ActionOperation) -> ActionOperation:
         """Invoke Action."""
         _LOGGER.info("InvokeAction")
-        a.status = -1
+        body_dict = {
+            "userDeviceId": a.context,
+            "actions": ActionOperationCodec.QUERY.encode([a]),
+        }
+        body_json = json.dumps(body_dict, separators=(",", ":"))
+        _LOGGER.info("InvokeAction: %s", body_json)
+        body_encoded = quote(body_json)  # URL 编码
+        url = (
+            "https://api.m.jd.com/api?functionId=smarthome_app_invokeDeviceAction&appid=device-debugger&body="
+            + body_encoded
+        )
+        resp = await self._request("get", url)
+        data = await resp.json(content_type=None)
+        _LOGGER.info("InvokeAction.Response: %s", data)
+        if data.get("code") == "0":
+            actions: list[ActionOperation] = (
+                ActionOperationCodec.RESULT.decode(
+                    data.get("result", {}).get("actions", [])
+                )
+            )
+            result: ActionOperation | None = actions[0]
+            if result is not None:
+                return result
+            a.status = Status.UNDEFINED
+            a.description = "result is empty"
+        else:
+            a.status = Status.INTERNAL_ERROR
+            a.description = "result error"
         return a
 
     # 根据京东 XIoT API 文档实现具体方法

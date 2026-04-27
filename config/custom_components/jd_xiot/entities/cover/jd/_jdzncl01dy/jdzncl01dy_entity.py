@@ -1,4 +1,4 @@
-"""Cover Jdzncl01dy."""
+"""Cover DeviceJdzncl01dy."""
 
 import logging
 from typing import Any
@@ -9,7 +9,9 @@ from custom_components.jd_xiot.entities.cover.jd_cover_mapping import (
     register_cover_entity,
 )
 from xiot_core.support.typedef.controller.device_controller import DeviceController
-from xiot_core_device_controller.jd._curtain._jdzncl01dy.jdzncl01dy import Jdzncl01dy
+from xiot_core_device_controller.jd._curtain._jdzncl01dy.device_jdzncl01dy import (
+    DeviceJdzncl01dy,
+)
 
 from homeassistant.components.cover import (
     ATTR_POSITION,
@@ -21,10 +23,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @register_cover_entity
-class Jdzncl01dyEntity(CoverEntity):
-    """Jdzncl01dy Entity."""
+class DeviceJdzncl01dyEntity(CoverEntity):
+    """DeviceJdzncl01dy Entity."""
 
-    TYPE: str = Jdzncl01dy.TYPE
+    TYPE: str = DeviceJdzncl01dy.TYPE
 
     def __init__(
         self,
@@ -35,7 +37,7 @@ class Jdzncl01dyEntity(CoverEntity):
         """Init Cover Entity."""
         self._api: JingDongXiotApi = api
         self._detail: JoyDeviceDetail = detail
-        self._device: Jdzncl01dy | None = None
+        self._device: DeviceJdzncl01dy | None = None
 
         # 必须：声明实体唯一 ID（不能重复，用于 HA 识别设备）
         self._attr_unique_id: str = f"jd_xiot_cover_{controller.did}"
@@ -60,7 +62,7 @@ class Jdzncl01dyEntity(CoverEntity):
         self._attr_current_cover_position: int = 0  # 0=关 100=开
 
         # 绑定设备控制器
-        if isinstance(controller, Jdzncl01dy):
+        if isinstance(controller, DeviceJdzncl01dy):
             self._device = controller
             self._device.set_operator(
                 api.set_property, api.invoke_action, detail["userDeviceId"]
@@ -78,7 +80,7 @@ class Jdzncl01dyEntity(CoverEntity):
         """Open."""
         _LOGGER.info("窗帘打开: %s", self._attr_unique_id)
         try:
-            await self._device.curtain_().open_curtain_().invoke()
+            await self._device.service_curtain().action_open_curtain().invoke()
             self._attr_current_cover_position = 100
             self._attr_is_closed = False
         except ValueError as e:
@@ -92,7 +94,7 @@ class Jdzncl01dyEntity(CoverEntity):
         """Close."""
         _LOGGER.info("窗帘关闭: %s", self._attr_unique_id)
         try:
-            await self._device.curtain_().close_curtain_().invoke()
+            await self._device.service_curtain().action_close_curtain().invoke()
             self._attr_current_cover_position = 0
             self._attr_is_closed = True
         except ValueError as e:
@@ -106,7 +108,7 @@ class Jdzncl01dyEntity(CoverEntity):
         """Stop."""
         _LOGGER.info("窗帘暂停: %s", self._attr_unique_id)
         try:
-            await self._device.curtain_().stop_curtain_().invoke()
+            await self._device.service_curtain().action_stop_curtain().invoke()
         except ValueError as e:
             _LOGGER.error("暂停窗帘失败: %s", e)
         self.async_write_ha_state()
@@ -120,7 +122,7 @@ class Jdzncl01dyEntity(CoverEntity):
         _LOGGER.info("设置窗帘位置: %s -> %s", self._attr_unique_id, position)
 
         try:
-            await self._device.curtain_().target_position_().set(position)
+            await self._device.service_curtain().property_target_position().set(position)
             self._attr_current_cover_position = position
             self._attr_is_closed = position == 0
         except ValueError as e:

@@ -48,7 +48,7 @@ def create_cover_entity(
         return None
     device.did = detail["did"]
 
-    if device.type.name != "light":
+    if device.type.name != "curtain":
         _LOGGER.info("Ignore non-cover equipment: %s", device_type)
         return None
 

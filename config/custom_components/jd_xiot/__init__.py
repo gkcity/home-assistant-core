@@ -13,7 +13,7 @@ from .core.const import JD_COOKIE
 _LOGGER = logging.getLogger(__name__)
 
 # 支持的设备类型列表
-_PLATFORMS: list[Platform] = [Platform.LIGHT, Platform.SWITCH]
+_PLATFORMS: list[Platform] = [Platform.LIGHT, Platform.SWITCH, Platform.COVER]
 
 # 定义配置条目的类型
 type JdXiotConfigEntry = ConfigEntry[api.JingDongXiotApi]

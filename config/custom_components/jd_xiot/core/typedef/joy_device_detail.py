@@ -67,7 +67,7 @@ def joy_device_additional_decode_safe(
         return JoyDeviceAdditional(
             productId=productId, modelId=modelId, name=name, userDeviceId=userDeviceId
         )
-    except KeyError, TypeError, ValueError:
+    except (KeyError, TypeError, ValueError):
         return None
 
 

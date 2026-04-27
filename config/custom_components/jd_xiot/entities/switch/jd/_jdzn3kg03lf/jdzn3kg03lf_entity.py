@@ -1,4 +1,4 @@
-"""Light Jdzn3kg03lf."""
+"""Light DeviceJdzn3kg03lf."""
 
 import logging
 
@@ -8,17 +8,19 @@ from custom_components.jd_xiot.entities.switch.jd_switch_mapping import (
     register_switch_entity,
 )
 from xiot_core.support.typedef.controller.device_controller import DeviceController
-from xiot_core_device_controller.jd._switch._jdzn3kg03lf.jdzn3kg03lf import Jdzn3kg03lf
+from xiot_core_device_controller.jd._switch._jdzn3kg03lf.device_jdzn3kg03lf import (
+    DeviceJdzn3kg03lf,
+)
 
 from homeassistant.components.switch import SwitchEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 @register_switch_entity
-class Jdzn3kg03lfEntity1(SwitchEntity):
-    """Jdzn3kg03lf Entity(1)."""
+class DeviceJdzn3kg03lfEntity1(SwitchEntity):
+    """DeviceJdzn3kg03lf Entity(1)."""
 
-    TYPE: str = Jdzn3kg03lf.TYPE
+    TYPE: str = DeviceJdzn3kg03lf.TYPE
 
     def __init__(
         self,
@@ -31,7 +33,7 @@ class Jdzn3kg03lfEntity1(SwitchEntity):
         # 保存
         self._api: JingDongXiotApi = api
         self._detail: JoyDeviceDetail = detail
-        self._device: Jdzn3kg03lf | None = None
+        self._device: DeviceJdzn3kg03lf | None = None
 
         # 必须：声明实体唯一 ID（不能重复，用于 HA 识别设备）
         self._attr_unique_id: str = f"jd_xiot_light_{controller.did}_1"
@@ -45,8 +47,8 @@ class Jdzn3kg03lfEntity1(SwitchEntity):
         # 初始状态
         self._attr_is_on: bool = False
 
-        if isinstance(controller, Jdzn3kg03lf):
-            self._device: Jdzn3kg03lf = controller
+        if isinstance(controller, DeviceJdzn3kg03lf):
+            self._device: DeviceJdzn3kg03lf = controller
             self._device.set_operator(
                 api.set_property, api.invoke_action, detail["userDeviceId"]
             )
@@ -61,7 +63,7 @@ class Jdzn3kg03lfEntity1(SwitchEntity):
         _LOGGER.info("Turn On: %s", kwargs)
 
         try:
-            await self._device.switch6_().on_().set(True)
+            await self._device.service_switch6().property_on().set(True)
             self._attr_is_on = True
         except ValueError as e:
             _LOGGER.error("Turn On Error: %s", e)
@@ -74,7 +76,7 @@ class Jdzn3kg03lfEntity1(SwitchEntity):
         _LOGGER.info("Turn Off: %s", kwargs)
 
         try:
-            await self._device.switch6_().on_().set(False)
+            await self._device.service_switch6().property_on().set(False)
             self._attr_is_on = False
         except ValueError as e:
             _LOGGER.error("Turn Off Error: %s", e)
@@ -92,10 +94,10 @@ class Jdzn3kg03lfEntity1(SwitchEntity):
         self.async_write_ha_state()
 
 @register_switch_entity
-class Jdzn3kg03lfEntity2(SwitchEntity):
-    """Jdzn3kg03lf Entity(2)."""
+class DeviceJdzn3kg03lfEntity2(SwitchEntity):
+    """DeviceJdzn3kg03lf Entity(2)."""
 
-    TYPE: str = Jdzn3kg03lf.TYPE
+    TYPE: str = DeviceJdzn3kg03lf.TYPE
 
     def __init__(
         self,
@@ -108,7 +110,7 @@ class Jdzn3kg03lfEntity2(SwitchEntity):
         # 保存
         self._api: JingDongXiotApi = api
         self._detail: JoyDeviceDetail = detail
-        self._device: Jdzn3kg03lf | None = None
+        self._device: DeviceJdzn3kg03lf | None = None
 
         # 必须：声明实体唯一 ID（不能重复，用于 HA 识别设备）
         self._attr_unique_id: str = f"jd_xiot_light_{controller.did}_2"
@@ -122,8 +124,8 @@ class Jdzn3kg03lfEntity2(SwitchEntity):
         # 初始状态
         self._attr_is_on: bool = False
 
-        if isinstance(controller, Jdzn3kg03lf):
-            self._device: Jdzn3kg03lf = controller
+        if isinstance(controller, DeviceJdzn3kg03lf):
+            self._device: DeviceJdzn3kg03lf = controller
             self._device.set_operator(
                 api.set_property, api.invoke_action, detail["userDeviceId"]
             )
@@ -138,7 +140,7 @@ class Jdzn3kg03lfEntity2(SwitchEntity):
         _LOGGER.info("Turn On: %s", kwargs)
 
         try:
-            await self._device.switch7_().on_().set(True)
+            await self._device.service_switch7().property_on().set(True)
             self._attr_is_on = True
         except ValueError as e:
             _LOGGER.error("Turn On Error: %s", e)
@@ -151,7 +153,7 @@ class Jdzn3kg03lfEntity2(SwitchEntity):
         _LOGGER.info("Turn Off: %s", kwargs)
 
         try:
-            await self._device.switch7_().on_().set(False)
+            await self._device.service_switch7().property_on().set(False)
             self._attr_is_on = False
         except ValueError as e:
             _LOGGER.error("Turn Off Error: %s", e)
@@ -169,10 +171,10 @@ class Jdzn3kg03lfEntity2(SwitchEntity):
         self.async_write_ha_state()
 
 @register_switch_entity
-class Jdzn3kg03lfEntity3(SwitchEntity):
-    """Jdzn3kg03lf Entity(3)."""
+class DeviceJdzn3kg03lfEntity3(SwitchEntity):
+    """DeviceJdzn3kg03lf Entity(3)."""
 
-    TYPE: str = Jdzn3kg03lf.TYPE
+    TYPE: str = DeviceJdzn3kg03lf.TYPE
 
     def __init__(
         self,
@@ -185,7 +187,7 @@ class Jdzn3kg03lfEntity3(SwitchEntity):
         # 保存
         self._api: JingDongXiotApi = api
         self._detail: JoyDeviceDetail = detail
-        self._device: Jdzn3kg03lf | None = None
+        self._device: DeviceJdzn3kg03lf | None = None
 
         # 必须：声明实体唯一 ID（不能重复，用于 HA 识别设备）
         self._attr_unique_id: str = f"jd_xiot_light_{controller.did}_3"
@@ -199,8 +201,8 @@ class Jdzn3kg03lfEntity3(SwitchEntity):
         # 初始状态
         self._attr_is_on: bool = False
 
-        if isinstance(controller, Jdzn3kg03lf):
-            self._device: Jdzn3kg03lf = controller
+        if isinstance(controller, DeviceJdzn3kg03lf):
+            self._device: DeviceJdzn3kg03lf = controller
             self._device.set_operator(
                 api.set_property, api.invoke_action, detail["userDeviceId"]
             )
@@ -215,7 +217,7 @@ class Jdzn3kg03lfEntity3(SwitchEntity):
         _LOGGER.info("Turn On: %s", kwargs)
 
         try:
-            await self._device.switch8_().on_().set(True)
+            await self._device.service_switch8().property_on().set(True)
             self._attr_is_on = True
         except ValueError as e:
             _LOGGER.error("Turn On Error: %s", e)
@@ -228,7 +230,7 @@ class Jdzn3kg03lfEntity3(SwitchEntity):
         _LOGGER.info("Turn Off: %s", kwargs)
 
         try:
-            await self._device.switch8_().on_().set(False)
+            await self._device.service_switch8().property_on().set(False)
             self._attr_is_on = False
         except ValueError as e:
             _LOGGER.error("Turn Off Error: %s", e)
