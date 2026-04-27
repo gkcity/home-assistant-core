@@ -81,10 +81,11 @@ class DeviceJdzncl01dyEntity(CoverEntity):
         _LOGGER.info("窗帘打开: %s", self._attr_unique_id)
         try:
             await self._device.service_curtain().action_open_curtain().invoke()
-            self._attr_current_cover_position = 100
-            self._attr_is_closed = False
         except ValueError as e:
             _LOGGER.error("打开窗帘失败: %s", e)
+
+        self._attr_current_cover_position = 100
+        self._attr_is_closed = False
         self.async_write_ha_state()
 
     # ------------------------------------------------------
@@ -93,12 +94,14 @@ class DeviceJdzncl01dyEntity(CoverEntity):
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close."""
         _LOGGER.info("窗帘关闭: %s", self._attr_unique_id)
+
         try:
             await self._device.service_curtain().action_close_curtain().invoke()
-            self._attr_current_cover_position = 0
-            self._attr_is_closed = True
         except ValueError as e:
             _LOGGER.error("关闭窗帘失败: %s", e)
+
+        self._attr_current_cover_position = 0
+        self._attr_is_closed = True
         self.async_write_ha_state()
 
     # ------------------------------------------------------
@@ -123,10 +126,11 @@ class DeviceJdzncl01dyEntity(CoverEntity):
 
         try:
             await self._device.service_curtain().property_target_position().set(position)
-            self._attr_current_cover_position = position
-            self._attr_is_closed = position == 0
         except ValueError as e:
             _LOGGER.error("设置窗帘位置失败: %s", e)
+
+        self._attr_current_cover_position = position
+        self._attr_is_closed = position == 0
         self.async_write_ha_state()
 
     # ------------------------------------------------------

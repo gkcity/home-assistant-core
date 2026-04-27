@@ -64,9 +64,10 @@ class DeviceJdzn2kg05lfEntity1(SwitchEntity):
 
         try:
             await self._device.service_switch6().property_on().set(True)
-            self._attr_is_on = True
         except ValueError as e:
             _LOGGER.error("Turn On Error: %s", e)
+
+        self._attr_is_on = True
 
         # 通知 HA：状态已更新，刷新界面
         self.async_write_ha_state()
@@ -77,9 +78,10 @@ class DeviceJdzn2kg05lfEntity1(SwitchEntity):
 
         try:
             await self._device.service_switch6().property_on().set(False)
-            self._attr_is_on = False
         except ValueError as e:
             _LOGGER.error("Turn Off Error: %s", e)
+
+        self._attr_is_on = False
 
         # 通知 HA：状态已更新
         self.async_write_ha_state()
@@ -141,9 +143,10 @@ class DeviceJdzn2kg05lfEntity2(SwitchEntity):
 
         try:
             await self._device.service_switch7().property_on().set(True)
-            self._attr_is_on = True
         except ValueError as e:
             _LOGGER.error("Turn On Error: %s", e)
+
+        self._attr_is_on = True
 
         # 通知 HA：状态已更新，刷新界面
         self.async_write_ha_state()
@@ -154,9 +157,10 @@ class DeviceJdzn2kg05lfEntity2(SwitchEntity):
 
         try:
             await self._device.service_switch7().property_on().set(False)
-            self._attr_is_on = False
         except ValueError as e:
             _LOGGER.error("Turn Off Error: %s", e)
+
+        self._attr_is_on = False
 
         # 通知 HA：状态已更新
         self.async_write_ha_state()

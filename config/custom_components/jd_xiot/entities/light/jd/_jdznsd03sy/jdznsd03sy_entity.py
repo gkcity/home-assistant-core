@@ -91,7 +91,6 @@ class DeviceJdznsd03syEntity(LightEntity):
         try:
             # 1. 开
             await self._device.service_light().property_on().set(True)
-            self._attr_is_on = True
 
             # 2. 色温
             if color_temp := kwargs.get("color_temp_kelvin"):
@@ -100,10 +99,13 @@ class DeviceJdznsd03syEntity(LightEntity):
 
             # 3. 亮度
             if brightness := kwargs.get("brightness"):
-                await self._device.service_light().property_brightness().set(brightness)
+                brightness_percentage: int = brightness * 100 // 255
+                await self._device.service_light().property_brightness().set(brightness_percentage)
                 self._attr_brightness = brightness
         except ValueError as e:
             _LOGGER.error("Turn On Error: %s", e)
+
+        self._attr_is_on = True
 
         # 通知 HA：状态已更新，刷新界面
         self.async_write_ha_state()
@@ -114,9 +116,10 @@ class DeviceJdznsd03syEntity(LightEntity):
 
         try:
             await self._device.service_light().property_on().set(False)
-            self._attr_is_on = False
         except ValueError as e:
             _LOGGER.error("Turn Off Error: %s", e)
+
+        self._attr_is_on = False
 
         # 通知 HA：状态已更新
         self.async_write_ha_state()
