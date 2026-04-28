@@ -4,7 +4,7 @@ import json
 import logging
 from urllib.parse import quote
 
-from aiohttp import ClientError, ClientResponse, ClientSession
+from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
 from xiot_core.spec.codec.operation.action_operation_codec import ActionOperationCodec
 from xiot_core.spec.codec.operation.property_operation_codec import (
     PropertyOperationCodec,
@@ -36,6 +36,7 @@ class JingDongClient:
         self._hass = hass
         self._cookie = cookie
         self._ip = ip
+        self._timeout = ClientTimeout(connect=3.0, sock_read=3.0, total=6.0)
         if session is None:
             _LOGGER.info("Initialize a new session")
             self._session = aiohttp_client.async_get_clientsession(hass)
@@ -88,7 +89,7 @@ class JingDongClient:
         _LOGGER.info("Get Devices By Local: %s", ip)
         url = f'http://{ip}:8080/device/v1/devices'
         try:
-            async with self._session.get(url=url) as resp:
+            async with self._session.get(url = url, timeout = self._timeout) as resp:
                 if resp.status == 200:
                     data = await resp.json(content_type=None)
                     if data.get("msg") == 'ok':
@@ -183,7 +184,7 @@ class JingDongClient:
             url = f'http://{self._ip}:8080/device/v1/properties'
             # 2. 设置JSON请求头 + 传入字符串类型的body
             headers = {"Content-Type": "application/json"}
-            async with self._session.put(url=url, data = body_json, headers = headers) as resp:
+            async with self._session.put(url=url, data = body_json, headers = headers, timeout = self._timeout) as resp:
                 data = await resp.json(content_type=None)
                 _LOGGER.info("SetProperty.Response: %s", data)
                 if data.get("msg", "error") == "ok":
