@@ -88,7 +88,7 @@ def joy_house_decode_array_safe(json_array: list[dict[str, Any]]) -> list[JoyHou
             house_id: int = int(item.get("houseId", ""))
             house_name: str = str(item.get("name", ""))
             rooms: list[JoyRoom] = joy_room_decode_array(item.get["rooms", []])
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             continue
 
         # 确保id和name不为空（可选校验）

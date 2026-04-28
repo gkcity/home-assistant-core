@@ -67,7 +67,7 @@ def joy_device_decode_array_safe(json_array: list[dict[str, Any]]) -> list[JoyDe
         try:
             user_device_id = int(item.get("userDeviceId", ""))
             did = str(item.get("did", ""))
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             continue
 
         # 确保id和name不为空（可选校验）

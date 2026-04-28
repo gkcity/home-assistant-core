@@ -1,18 +1,11 @@
 {
     "config": {
         "step": {
-            "user": {
-                "title": "京东小家 - 输入 Cookie",
-                "description": "请点击以下链接手动获取 Cookie: \n[{url}]({url})",
+            "central_screen_ip": {
+                "title": "京东小家 - 配置中控屏",
+                "description": "请输入中控屏IP地址",
                 "data": {
-                  "cookie": "Cookie"
-                }
-            },
-            "house": {
-                "title": "京东小家 - 选择房屋",
-                "description": "请选择您要控制的房屋",
-                "data": {
-                  "house_id": "房屋"
+                    "ip": "IP"
                 }
             },
             "devices": {

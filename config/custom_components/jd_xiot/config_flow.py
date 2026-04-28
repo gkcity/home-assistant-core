@@ -1,31 +1,20 @@
 """Config flow for JingDong XIoT."""
 
-import json
 import logging
-from urllib.parse import quote
 
-from aiohttp import ClientError
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.helpers import aiohttp_client, config_validation as cv
+from homeassistant.helpers import config_validation as cv
 
-from .core.const import DOMAIN, JD_COOKIE, SELECTED_DEVICE_IDS, SELECTED_HOUSE_ID
-from .core.typedef.joy_device_detail import (
-    JoyDeviceDetail,
-    joy_device_detail_decode_array,
-)
-from .core.typedef.joy_house import (
-    JoyHouse,
-    get_all_user_device_ids,
-    joy_house_decode_array,
-)
+from .api.const import DOMAIN, JD_CENTRAL_SCREEN_IP, SELECTED_DEVICE_IDS
+from .api.jd_client import JingDongClient
+from .api.typedef.joy_device_detail import JoyDeviceDetail
 
 _LOGGER = logging.getLogger(__name__)
 
-# 配置流程的数据结构
-DATA_SCHEMA_COOKIE = vol.Schema({vol.Required(JD_COOKIE): str})
-
+# 中控屏IP输入schema
+DATA_SCHEMA_CENTRAL_SCREEN_IP = vol.Schema({vol.Required(JD_CENTRAL_SCREEN_IP): str})
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for JingDong XIoT."""
@@ -34,74 +23,59 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize flow."""
-        self._cookie: str = None
-        self._houses: list[JoyHouse] = None  # 房屋列表
-        self._selected_house: JoyHouse = None
+        # 核心修复：确保hass不是None（Config Flow类会自动注入hass属性）
+        self._session: JingDongClient | None = None
+        self._auth_type: str = None  # 授权类型
+        self._central_screen_ip: str = None  # 中控屏IP
         self._devices: list[JoyDeviceDetail] = None  # 设备列表
-        self._selected_device_ids: list[int] = []
+        self._selected_device_ids: list[str] = []
 
     async def async_step_user(self, user_input=None):
-        """Step 1: Input cookie."""
+        """Step 0. User Input."""
+        return await self.async_step_central_screen_ip()
+
+    async def async_step_central_screen_ip(self, user_input=None):
+        """Step 1. Input Central Screen IP."""
         errors = {}
 
         if user_input is not None:
-            self._cookie = user_input[JD_COOKIE]  # 保存cookie
+            # 只有在用户输入后才初始化session（此时hass已正确注入）
+            self._session = JingDongClient(self.hass)
 
-            # 验证 Cookie 是否有效（并顺便获取房屋列表，以便下一步使用）
-            valid, houses = await self._test_and_get_houses(self._cookie)
-            if valid:
-                self._houses = houses
-                return await self.async_step_house()
-            errors["base"] = "invalid_auth"
+            self._central_screen_ip = user_input[JD_CENTRAL_SCREEN_IP]
 
-        return self.async_show_form(
-            step_id="user",
-            data_schema=DATA_SCHEMA_COOKIE,
-            errors=errors,
-            description_placeholders={"url": "https://xiot-debugger.jd.com/"},
-        )
+            # # 这里可以添加中控屏IP的验证逻辑（可选）
+            # # 示例：简单的IP格式验证
+            # try:
+            #     cv.ip
+            #     cv.ipv4(self._central_screen_ip)
+            # except vol.Invalid:
+            #     errors["base"] = "invalid_ip"
+            #     return self.async_show_form(
+            #         step_id="central_screen_ip",
+            #         data_schema=DATA_SCHEMA_CENTRAL_SCREEN_IP,
+            #         errors=errors,
+            #     )
 
-    async def async_step_house(self, user_input=None):
-        """Step 2: Select a house."""
-        if user_input is not None:
-            selected_house_id = user_input[SELECTED_HOUSE_ID]
+            self._devices = await self._session.async_get_devices_by_local(self._central_screen_ip)
 
-            # 根据ID找到对应的JoyHouse对象
-            self._selected_house = next(
-                (h for h in self._houses if h["id"] == selected_house_id), None
-            )
-
-            if self._selected_house is None:
-                return self.async_abort(reason="house_not_found")
-
-            # 根据选中的房屋获取设备列表
-            self._devices = await self._get_devices_by_house(
-                self._cookie, self._selected_house
-            )
             return await self.async_step_devices()
 
-        # 构建房屋选择表单
-        house_options = {house["id"]: house["name"] for house in self._houses}
-
         return self.async_show_form(
-            step_id="house",
-            data_schema=vol.Schema(
-                {vol.Required(SELECTED_HOUSE_ID): vol.In(house_options)}
-            ),
+            step_id="central_screen_ip",
+            data_schema=DATA_SCHEMA_CENTRAL_SCREEN_IP,
+            errors=errors,
         )
 
     async def async_step_devices(self, user_input=None):
-        """Step 3: Select devices to add."""
+        """Step 2: Select devices to add."""
         if user_input is not None:
-            self._selected_device_ids = [
-                int(id_str) for id_str in user_input[SELECTED_DEVICE_IDS]
-            ]
+            self._selected_device_ids = list[user_input[SELECTED_DEVICE_IDS]]
             # 创建配置条目
             return self.async_create_entry(
                 title="JingDong XIoT",
                 data={
-                    JD_COOKIE: self._cookie,
-                    SELECTED_HOUSE_ID: self._selected_house["id"],
+                    JD_CENTRAL_SCREEN_IP: self._central_screen_ip,
                     SELECTED_DEVICE_IDS: self._selected_device_ids,
                 },
             )
@@ -109,7 +83,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # 构建设备多选框
         device_options = {
             str(
-                device["userDeviceId"]
+                device["did"]
             ): f"{device['additional']['name']} ({device['summary']['type']})"
             for device in self._devices
         }
@@ -120,62 +94,3 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {vol.Required(SELECTED_DEVICE_IDS): cv.multi_select(device_options)}
             ),
         )
-
-    # 辅助方法, 实现调用京东 API 获取房屋列表，并验证 Cookie
-    # 返回 (True, [{"id": "xxx", "name": "我家"}, ...]) 或 (False, [])
-    async def _test_and_get_houses(self, cookie: str) -> tuple[bool, list[JoyHouse]]:
-        """Test cookie and return (is_valid, houses_list)."""
-        session = aiohttp_client.async_get_clientsession(self.hass)
-        headers = {"Cookie": cookie}
-        try:
-            async with session.get(
-                "https://api.m.jd.com/api?functionId=smarthome_screen_getHouseInfo&appid=device-debugger",
-                headers=headers,
-            ) as resp:
-                if resp.status == 200:
-                    data = await resp.json(content_type=None)
-                    if data.get("code") == 0:
-                        houses = joy_house_decode_array(
-                            data.get("data", {}).get("houses", [])
-                        )
-                        return True, houses
-                return False, []
-        except ClientError as e:
-            _LOGGER.error("Error testing cookie: %s", e)
-            return False, []
-
-    async def _get_devices_by_house(
-        self, cookie: str, house: JoyHouse
-    ) -> list[JoyDeviceDetail]:
-        """Get device list under a specific house."""
-        _LOGGER.info("GetDevicesByHouse")
-        session = aiohttp_client.async_get_clientsession(self.hass)
-        headers = {"Cookie": cookie}
-        body_dict = {"userDeviceIds": get_all_user_device_ids(house)}
-        body_json = json.dumps(body_dict, separators=(",", ":"))
-        body_encoded = quote(body_json)  # URL 编码
-        url = (
-            "https://api.m.jd.com/api?functionId=smarthome_screen_getDeviceInfo&appid=device-debugger&body="
-            + body_encoded
-        )
-        try:
-            async with session.get(url=url, headers=headers) as resp:
-                if resp.status == 200:
-                    data = await resp.json(content_type=None)
-                    if data.get("code") == 0:
-                        devices: list[JoyDeviceDetail] = joy_device_detail_decode_array(
-                            data.get("data", {}).get("devices", [])
-                        )
-                        _LOGGER.info("Devices.length: %d", len(devices))
-                        return devices
-                    _LOGGER.error(
-                        "GetDevicesByHouse, code: %d, message: %s",
-                        data.get("code"),
-                        data.get("message"),
-                    )
-                else:
-                    _LOGGER.info("Status: %d", resp.status)
-                return []
-        except ClientError as e:
-            _LOGGER.error("Error get devices by house: %s", e)
-            return []

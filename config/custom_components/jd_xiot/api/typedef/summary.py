@@ -35,8 +35,8 @@ def summary_decode_safe(data: dict[str, Any] | None) -> Summary | None:
         return None
 
     try:
-        deviceType = str(data["type"])
+        device_type = str(data["type"])
         online = bool(data["online"])
-        return Summary(type=deviceType, online=online)
-    except KeyError, TypeError, ValueError:
+        return Summary(type=device_type, online=online)
+    except (KeyError, TypeError, ValueError):
         return None

@@ -2,8 +2,8 @@
 
 import logging
 
-from custom_components.jd_xiot.core.api import JingDongXiotApi
-from custom_components.jd_xiot.core.typedef.joy_device_detail import JoyDeviceDetail
+from custom_components.jd_xiot.api.jd_client import JingDongClient
+from custom_components.jd_xiot.api.typedef.joy_device_detail import JoyDeviceDetail
 from custom_components.jd_xiot.entities.switch.jd_switch_mapping import (
     register_switch_entity,
 )
@@ -25,13 +25,13 @@ class DeviceJdzn2kg05lfEntity1(SwitchEntity):
     def __init__(
         self,
         controller: DeviceController,
-        api: JingDongXiotApi,
+        client: JingDongClient,
         detail: JoyDeviceDetail,
     ) -> None:
         """Init Switch Entity."""
 
         # 保存
-        self._api: JingDongXiotApi = api
+        self._client: JingDongClient = client
         self._detail: JoyDeviceDetail = detail
         self._device: DeviceJdzn2kg05lf | None = None
 
@@ -50,7 +50,7 @@ class DeviceJdzn2kg05lfEntity1(SwitchEntity):
         if isinstance(controller, DeviceJdzn2kg05lf):
             self._device: DeviceJdzn2kg05lf = controller
             self._device.set_operator(
-                api.set_property, api.invoke_action, detail["userDeviceId"]
+                client.set_property, client.invoke_action, detail["userDeviceId"]
             )
             _LOGGER.info("Init: %s", detail["did"])
         else:
@@ -104,13 +104,13 @@ class DeviceJdzn2kg05lfEntity2(SwitchEntity):
     def __init__(
         self,
         controller: DeviceController,
-        api: JingDongXiotApi,
+        client: JingDongClient,
         detail: JoyDeviceDetail,
     ) -> None:
         """Init Switch Entity."""
 
         # 保存
-        self._api: JingDongXiotApi = api
+        self._client: JingDongClient = client
         self._detail: JoyDeviceDetail = detail
         self._device: DeviceJdzn2kg05lf | None = None
 
@@ -129,7 +129,7 @@ class DeviceJdzn2kg05lfEntity2(SwitchEntity):
         if isinstance(controller, DeviceJdzn2kg05lf):
             self._device: DeviceJdzn2kg05lf = controller
             self._device.set_operator(
-                api.set_property, api.invoke_action, detail["userDeviceId"]
+                client.set_property, client.invoke_action, detail["userDeviceId"]
             )
             _LOGGER.info("Init: %s", detail["did"])
         else:

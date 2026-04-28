@@ -2,8 +2,8 @@
 
 import logging
 
-from custom_components.jd_xiot.core.api import JingDongXiotApi
-from custom_components.jd_xiot.core.typedef.joy_device_detail import JoyDeviceDetail
+from custom_components.jd_xiot.api.jd_client import JingDongClient
+from custom_components.jd_xiot.api.typedef.joy_device_detail import JoyDeviceDetail
 from xiot_core_device_controller.device_mapping import create_device_controller
 
 from homeassistant.components.light import LightEntity
@@ -29,13 +29,13 @@ def register_light_entity(cls):
 
 
 def create_light_entity(
-    device_type: str, api: JingDongXiotApi, detail: JoyDeviceDetail
+    device_type: str, client: JingDongClient, detail: JoyDeviceDetail
 ) -> LightEntity | None:
     """根据 TYPE 字符串创建灯光实例.
 
     Args:
         device_type: Device Type
-        api: API
+        client: JingDongXiotClient
         detail: Device Detail Info
 
     Returns:
@@ -58,4 +58,4 @@ def create_light_entity(
     if clazz is None:
         _LOGGER.info("Entity Class not found: %s", device_type)
         return None
-    return clazz(device, api, detail)
+    return clazz(device, client, detail)

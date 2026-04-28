@@ -2,8 +2,8 @@
 
 import logging
 
-from custom_components.jd_xiot.core.api import JingDongXiotApi
-from custom_components.jd_xiot.core.typedef.joy_device_detail import JoyDeviceDetail
+from custom_components.jd_xiot.api.jd_client import JingDongClient
+from custom_components.jd_xiot.api.typedef.joy_device_detail import JoyDeviceDetail
 from xiot_core_device_controller.device_mapping import create_device_controller
 
 from homeassistant.components.switch import SwitchEntity
@@ -27,7 +27,7 @@ def register_switch_entity(cls):
 
 
 def create_switch_entity(
-    device_type: str, api: JingDongXiotApi, detail: JoyDeviceDetail
+    device_type: str, client: JingDongClient, detail: JoyDeviceDetail
 ) -> list[SwitchEntity]:
     """Create Switch Entity.
 
@@ -57,4 +57,4 @@ def create_switch_entity(
         _LOGGER.info("Entity Class not found: %s", device_type)
         return []
 
-    return [clazz(device, api, detail) for clazz in classes]
+    return [clazz(device, client, detail) for clazz in classes]

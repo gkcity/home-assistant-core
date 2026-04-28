@@ -9,15 +9,15 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .core.api import JingDongXiotApi
-from .core.const import SELECTED_DEVICE_IDS
-from .core.typedef.joy_device_detail import JoyDeviceDetail
+from .api.const import SELECTED_DEVICE_IDS
+from .api.jd_client import JingDongClient
+from .api.typedef.joy_device_detail import JoyDeviceDetail
 from .entities.switch.jd_switch_mapping import create_switch_entity
 
 _LOGGER = logging.getLogger(__name__)
 
 # 定义配置条目的类型
-type JdXiotConfigEntry = ConfigEntry[JingDongXiotApi]
+type JdXiotConfigEntry = ConfigEntry[JingDongClient]
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -28,10 +28,10 @@ async def async_setup_entry(
     _LOGGER.info("Set up the switch platform")
 
     # 1. 从 entry.runtime_data 获取 API 客户端
-    api: JingDongXiotApi = entry.runtime_data
+    client: JingDongClient = entry.runtime_data
 
     # 2. 从 entry.data 获取保存的设备ID列表（添加集成时选择的设备）
-    selected_device_ids: list[int] = entry.data.get(SELECTED_DEVICE_IDS, [])
+    selected_device_ids: list[str] = entry.data.get(SELECTED_DEVICE_IDS, [])
 
     _LOGGER.info("Selected device IDs for JD XIoT: %s", selected_device_ids)
 
@@ -41,7 +41,7 @@ async def async_setup_entry(
         return
 
     # 3. 批量获取设备详细信息
-    details: list[JoyDeviceDetail] = await api.async_get_devices_info(
+    details: list[JoyDeviceDetail] = await client.async_get_devices_info(
         selected_device_ids
     )
 
@@ -56,7 +56,7 @@ async def async_setup_entry(
     # 5. 创建实体
     for detail in details:
         device_type: str = detail.get("summary", {}).get("type", "").lower()
-        array: list[SwitchEntity] = create_switch_entity(device_type, api, detail)
+        array: list[SwitchEntity] = create_switch_entity(device_type, client, detail)
         if len(array) > 0:
             _LOGGER.info("Add switches: %d", len(array))
             for entity in array:

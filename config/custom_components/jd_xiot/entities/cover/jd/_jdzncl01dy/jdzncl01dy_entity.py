@@ -3,8 +3,8 @@
 import logging
 from typing import Any
 
-from custom_components.jd_xiot.core.api import JingDongXiotApi
-from custom_components.jd_xiot.core.typedef.joy_device_detail import JoyDeviceDetail
+from custom_components.jd_xiot.api.jd_client import JingDongClient
+from custom_components.jd_xiot.api.typedef.joy_device_detail import JoyDeviceDetail
 from custom_components.jd_xiot.entities.cover.jd_cover_mapping import (
     register_cover_entity,
 )
@@ -31,11 +31,11 @@ class DeviceJdzncl01dyEntity(CoverEntity):
     def __init__(
         self,
         controller: DeviceController,
-        api: JingDongXiotApi,
+        client: JingDongClient,
         detail: JoyDeviceDetail,
     ) -> None:
         """Init Cover Entity."""
-        self._api: JingDongXiotApi = api
+        self._client: JingDongClient = client
         self._detail: JoyDeviceDetail = detail
         self._device: DeviceJdzncl01dy | None = None
 
@@ -65,7 +65,7 @@ class DeviceJdzncl01dyEntity(CoverEntity):
         if isinstance(controller, DeviceJdzncl01dy):
             self._device = controller
             self._device.set_operator(
-                api.set_property, api.invoke_action, detail["userDeviceId"]
+                client.set_property, client.invoke_action, detail["userDeviceId"]
             )
             _LOGGER.info("初始化窗帘成功: %s", self._attr_unique_id)
         else:
