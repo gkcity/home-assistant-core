@@ -70,7 +70,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_devices(self, user_input=None):
         """Step 2: Select devices to add."""
         if user_input is not None:
-            self._selected_device_ids = list[user_input[SELECTED_DEVICE_IDS]]
+            self._selected_device_ids = user_input[SELECTED_DEVICE_IDS]
+
             # 创建配置条目
             return self.async_create_entry(
                 title="JingDong XIoT",
