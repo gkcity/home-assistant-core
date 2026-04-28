@@ -94,7 +94,7 @@ def joy_device_detail_decode(data: dict[str, Any]) -> JoyDeviceDetail:
         raise TypeError(f"userDeviceId 必须是布尔值，实际类型：{type(userDeviceId)}")
 
     # 强类型返回
-    return Summary(
+    return JoyDeviceDetail(
         did=did, userDeviceId=userDeviceId, summary=summary, additional=additional
     )
 
@@ -117,5 +117,5 @@ def joy_device_detail_decode_safe(
         return JoyDeviceDetail(
             did=did, userDeviceId=userDeviceId, summary=summary, additional=additional
         )
-    except KeyError, TypeError, ValueError:
+    except (KeyError, TypeError, ValueError):
         return None
