@@ -2,6 +2,7 @@
 
 import logging
 
+from custom_components.jd_xiot.api.const import DOMAIN
 from custom_components.jd_xiot.api.jd_client import JingDongClient
 from custom_components.jd_xiot.api.typedef.joy_device_detail import JoyDeviceDetail
 from custom_components.jd_xiot.entities.switch.jd_switch_mapping import (
@@ -13,6 +14,7 @@ from xiot_core_device_controller.jd._switch._jdzn3kg03lf.device_jdzn3kg03lf impo
 )
 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.helpers.device_registry import DeviceInfo
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +48,14 @@ class DeviceJdzn3kg03lfEntity1(SwitchEntity):
 
         # 初始状态
         self._attr_is_on: bool = False
+
+        # 设备信息
+        self._attr_device_info = DeviceInfo(
+            identifiers = {(DOMAIN, detail["did"])},
+            name = f"Light {detail["did"]}",
+            manufacturer = "京东智能",
+            model = detail['additional']['name'],
+        )
 
         if isinstance(controller, DeviceJdzn3kg03lf):
             self._device: DeviceJdzn3kg03lf = controller
@@ -126,6 +136,14 @@ class DeviceJdzn3kg03lfEntity2(SwitchEntity):
         # 初始状态
         self._attr_is_on: bool = False
 
+        # 设备信息
+        self._attr_device_info = DeviceInfo(
+            identifiers = {(DOMAIN, detail["did"])},
+            name = f"Light {detail["did"]}",
+            manufacturer = "京东智能",
+            model = detail['additional']['name'],
+        )
+
         if isinstance(controller, DeviceJdzn3kg03lf):
             self._device: DeviceJdzn3kg03lf = controller
             self._device.set_operator(
@@ -204,6 +222,14 @@ class DeviceJdzn3kg03lfEntity3(SwitchEntity):
 
         # 初始状态
         self._attr_is_on: bool = False
+
+        # 设备信息
+        self._attr_device_info = DeviceInfo(
+            identifiers = {(DOMAIN, detail["did"])},
+            name = f"Light {detail["did"]}",
+            manufacturer = "京东智能",
+            model = detail['additional']['name'],
+        )
 
         if isinstance(controller, DeviceJdzn3kg03lf):
             self._device: DeviceJdzn3kg03lf = controller

@@ -2,7 +2,10 @@
 
 from typing import Any, TypedDict
 
-from .summary import Summary, summary_decode
+from xiot_core.spec.codec.summary.summary_codec import SummaryCodec
+
+# from .summary import Summary, summary_decode
+from xiot_core.spec.typedef.summary.summary import Summary
 
 
 class JoyDeviceAdditional(TypedDict):
@@ -26,27 +29,27 @@ def joy_device_additional_decode(data: dict[str, Any]) -> JoyDeviceAdditional:
     """Convert a dict to JoyDeviceAdditional. Strict type checking: raises KeyError if fields missing."""
 
     # 强制获取字段，不存在直接抛 KeyError(强类型风格)
-    productId: int = data["productId"]
-    modelId: int = data["modelId"]
-    userDeviceId: int = data["userDeviceId"]
+    product_id: int = data["productId"]
+    model_id: int = data["modelId"]
+    user_device_id: int = data["userDeviceId"]
     name: str = data["name"]
 
     # 强制类型校验（确保不会把 int/None 混进去）
     if not isinstance(name, str):
         raise TypeError(f"name 必须是字符串，实际类型：{type(name).__name__}")
 
-    if not isinstance(productId, int):
-        raise TypeError(f"productId 必须是整型，实际类型：{type(productId).__name__}")
+    if not isinstance(product_id, int):
+        raise TypeError(f"productId 必须是整型，实际类型：{type(product_id).__name__}")
 
-    if not isinstance(modelId, int):
-        raise TypeError(f"modelId 必须是整型，实际类型：{type(modelId).__name__}")
+    if not isinstance(model_id, int):
+        raise TypeError(f"modelId 必须是整型，实际类型：{type(model_id).__name__}")
 
-    if not isinstance(userDeviceId, int):
-        raise TypeError(f"userDeviceId 必须是整型，实际类型：{type(userDeviceId).__name__}")
+    if not isinstance(user_device_id, int):
+        raise TypeError(f"userDeviceId 必须是整型，实际类型：{type(user_device_id).__name__}")
 
     # 强类型返回
     return JoyDeviceAdditional(
-        productId=productId, modelId=modelId, name=name, userDeviceId=userDeviceId
+        productId=product_id, modelId=model_id, name=name, userDeviceId=user_device_id
     )
 
 #       "additional": {
@@ -61,27 +64,27 @@ def joy_device_additional_decode_local(data: dict[str, Any]) -> JoyDeviceAdditio
     """Convert a dict to JoyDeviceAdditional. Strict type checking: raises KeyError if fields missing."""
 
     # 强制获取字段，不存在直接抛 KeyError(强类型风格)
-    productId: int = 0
-    modelId: int = 0
-    userDeviceId: int = data["userDeviceId"]
+    product_id: int = 0
+    model_id: int = 0
+    user_device_id: int = data["userDeviceId"]
     name: str = data.get("name") or data.get("productName") or "?"
 
     # 强制类型校验（确保不会把 int/None 混进去）
     if not isinstance(name, str):
         raise TypeError(f"name 必须是字符串，实际类型：{type(name).__name__}")
 
-    if not isinstance(productId, int):
-        raise TypeError(f"productId 必须是整型，实际类型：{type(productId).__name__}")
+    if not isinstance(product_id, int):
+        raise TypeError(f"productId 必须是整型，实际类型：{type(product_id).__name__}")
 
-    if not isinstance(modelId, int):
-        raise TypeError(f"modelId 必须是整型，实际类型：{type(modelId).__name__}")
+    if not isinstance(model_id, int):
+        raise TypeError(f"modelId 必须是整型，实际类型：{type(model_id).__name__}")
 
-    if not isinstance(userDeviceId, int):
-        raise TypeError(f"userDeviceId 必须是整型，实际类型：{type(userDeviceId).__name__}")
+    if not isinstance(user_device_id, int):
+        raise TypeError(f"userDeviceId 必须是整型，实际类型：{type(user_device_id).__name__}")
 
     # 强类型返回
     return JoyDeviceAdditional(
-        productId=productId, modelId=modelId, name=name, userDeviceId=userDeviceId
+        productId=product_id, modelId=model_id, name=name, userDeviceId=user_device_id
     )
 
 def joy_device_additional_decode_safe(
@@ -93,12 +96,12 @@ def joy_device_additional_decode_safe(
         return None
 
     try:
-        productId = int(data["productId"])
-        modelId = int(data["modelId"])
-        userDeviceId = int(data["userDeviceId"])
+        product_id = int(data["productId"])
+        model_id = int(data["modelId"])
+        user_device_id = int(data["userDeviceId"])
         name = str(data["name"])
         return JoyDeviceAdditional(
-            productId=productId, modelId=modelId, name=name, userDeviceId=userDeviceId
+            productId=product_id, modelId=model_id, name=name, userDeviceId=user_device_id
         )
     except (KeyError, TypeError, ValueError):
         return None
@@ -119,22 +122,27 @@ def joy_device_detail_decode_local(data: dict[str, Any]) -> JoyDeviceDetail:
     """Convert a dict to JoyDeviceDetail. Strict type checking: raises KeyError if fields missing."""
 
     # 强制获取字段，不存在直接抛 KeyError（强类型风格）
+    _device = data.get("device", {})
+    _summary = _device.get("summary", {})
 
     did: str = data.get("device", {}).get("did")
-    userDeviceId: int = 0
-    summary: Summary = summary_decode(data.get("device", {}).get("summary"))
+    user_device_id: int = 0
+    summary: Summary | None = SummaryCodec.decode_single(_summary)
     additional: JoyDeviceAdditional = joy_device_additional_decode_local(data["additional"])
 
     # 强制类型校验（确保不会把 int/None 混进去）
     if not isinstance(did, str):
         raise TypeError(f"did 必须是字符串，实际类型：{type(did)}")
 
-    if not isinstance(userDeviceId, int):
-        raise TypeError(f"userDeviceId 必须是整型，实际类型：{type(userDeviceId).__name__}")
+    if not isinstance(user_device_id, int):
+        raise TypeError(f"userDeviceId 必须是整型，实际类型：{type(user_device_id).__name__}")
+
+    if summary is None:
+        raise TypeError("summary is None")
 
     # 强类型返回
     return JoyDeviceDetail(
-        did=did, userDeviceId=userDeviceId, summary=summary, additional=additional
+        did=did, userDeviceId=user_device_id, summary=summary, additional=additional
     )
 
 def joy_device_detail_decode_array(data: list[Any]) -> list[JoyDeviceDetail]:
@@ -146,23 +154,28 @@ def joy_device_detail_decode(data: dict[str, Any]) -> JoyDeviceDetail:
     """Convert a dict to JoyDeviceDetail. Strict type checking: raises KeyError if fields missing."""
 
     # 强制获取字段，不存在直接抛 KeyError（强类型风格）
+    _device = data.get("device", {})
+    _summary = _device.get("summary", {})
+
     did: str = data["did"]
-    userDeviceId: int = data["userDeviceId"]
-    summary: Summary = summary_decode(data["summary"])
+    user_device_id: int = data["userDeviceId"]
+    summary: Summary | None = SummaryCodec.decode_single(_summary)
     additional: JoyDeviceAdditional = joy_device_additional_decode(data["additional"])
 
     # 强制类型校验（确保不会把 int/None 混进去）
     if not isinstance(did, str):
         raise TypeError(f"did 必须是字符串，实际类型：{type(did).__name__}")
 
-    if not isinstance(userDeviceId, int):
-        raise TypeError(f"userDeviceId 必须是布尔值，实际类型：{type(userDeviceId).__name__}")
+    if not isinstance(user_device_id, int):
+        raise TypeError(f"userDeviceId 必须是布尔值，实际类型：{type(user_device_id).__name__}")
+
+    if summary is None:
+        raise TypeError("summary is None")
 
     # 强类型返回
     return JoyDeviceDetail(
-        did=did, userDeviceId=userDeviceId, summary=summary, additional=additional
+        did=did, userDeviceId=user_device_id, summary=summary, additional=additional
     )
-
 
 def joy_device_detail_decode_safe(
     data: dict[str, Any] | None,
@@ -173,14 +186,21 @@ def joy_device_detail_decode_safe(
         return None
 
     try:
+        _device = data.get("device", {})
+        _summary = _device.get("summary", {})
+
         did = str(data["did"])
-        userDeviceId = int(data["userDeviceId"])
-        summary: Summary = summary_decode(data["summary"])
+        user_device_id = int(data["userDeviceId"])
+        summary: Summary | None = SummaryCodec.decode_single(_summary)
         additional: JoyDeviceAdditional = joy_device_additional_decode(
             data["additional"]
         )
+
+        if summary is None:
+            return None
+
         return JoyDeviceDetail(
-            did=did, userDeviceId=userDeviceId, summary=summary, additional=additional
+            did=did, userDeviceId=user_device_id, summary=summary, additional=additional
         )
     except (KeyError, TypeError, ValueError):
         return None

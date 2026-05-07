@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+from custom_components.jd_xiot.api.const import DOMAIN
 from custom_components.jd_xiot.api.jd_client import JingDongClient
 from custom_components.jd_xiot.api.typedef.joy_device_detail import JoyDeviceDetail
 from custom_components.jd_xiot.entities.cover.jd_cover_mapping import (
@@ -18,6 +19,7 @@ from homeassistant.components.cover import (
     CoverEntity,
     CoverEntityFeature,
 )
+from homeassistant.helpers.device_registry import DeviceInfo
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,6 +62,14 @@ class DeviceJdzncl01dyEntity(CoverEntity):
         # 初始状态：关闭
         self._attr_is_closed: bool = False
         self._attr_current_cover_position: int = 0  # 0=关 100=开
+
+        # 设备信息
+        self._attr_device_info = DeviceInfo(
+            identifiers = {(DOMAIN, detail["did"])},
+            name = f"Light {detail["did"]}",
+            manufacturer = "京东智能",
+            model = detail['additional']['name'],
+        )
 
         # 绑定设备控制器
         if isinstance(controller, DeviceJdzncl01dy):

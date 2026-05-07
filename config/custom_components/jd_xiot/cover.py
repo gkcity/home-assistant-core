@@ -55,7 +55,7 @@ async def async_setup_entry(
 
     # 5. 创建实体
     for detail in details:
-        device_type: str = detail.get("summary", {}).get("type", "").lower()
+        device_type: str = str(detail["summary"].type)
         entity = create_cover_entity(device_type, client, detail)
         if entity is not None:
             _LOGGER.info("Add cover: %s", device_type)

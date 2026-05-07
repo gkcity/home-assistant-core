@@ -2,6 +2,7 @@
 
 import logging
 
+from custom_components.jd_xiot.api.const import DOMAIN
 from custom_components.jd_xiot.api.jd_client import JingDongClient
 from custom_components.jd_xiot.api.typedef.joy_device_detail import JoyDeviceDetail
 from custom_components.jd_xiot.entities.light.jd_light_mapping import (
@@ -13,6 +14,7 @@ from xiot_core_device_controller.jd._light._jdzntd01sy.device_jdzntd01sy import 
 )
 
 from homeassistant.components.light import ColorMode, LightEntity, LightEntityFeature
+from homeassistant.helpers.device_registry import DeviceInfo
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -69,6 +71,14 @@ class DeviceJdzntd01syEntity(LightEntity):
         self._attr_min_color_temp_kelvin = 2700
         self._attr_max_color_temp_kelvin = 6500
         self._attr_hs_color: tuple[float, float] | None = None
+
+        # 设备信息
+        self._attr_device_info = DeviceInfo(
+            identifiers = {(DOMAIN, detail["did"])},
+            name = f"Light {detail["did"]}",
+            manufacturer = "京东智能",
+            model = detail['additional']['name'],
+        )
 
         if isinstance(controller, DeviceJdzntd01sy):
             self._device: DeviceJdzntd01sy = controller

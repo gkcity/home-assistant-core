@@ -55,7 +55,7 @@ async def async_setup_entry(
 
     # 5. 创建实体
     for detail in details:
-        device_type: str = detail.get("summary", {}).get("type", "").lower()
+        device_type: str = str(detail["summary"].type)
         array: list[SwitchEntity] = create_switch_entity(device_type, client, detail)
         if len(array) > 0:
             _LOGGER.info("Add switches: %d", len(array))

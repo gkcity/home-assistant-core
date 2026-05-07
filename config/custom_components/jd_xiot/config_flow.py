@@ -85,7 +85,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         device_options = {
             str(
                 device["did"]
-            ): f"{device['additional']['name']} ({device['summary']['type']})"
+            ): f"{device['additional']['name']} (str({device['summary'].type}))"
             for device in self._devices
         }
 
