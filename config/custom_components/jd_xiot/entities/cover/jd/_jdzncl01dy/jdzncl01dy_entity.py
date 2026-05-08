@@ -153,13 +153,15 @@ class DeviceJdzncl01dyEntity(CoverEntity):
         """Update Status."""
         _LOGGER.info("Update")
 
-        try:
-            current_position = await self._device.service_curtain().property_current_position().get()
-            self._attr_current_cover_position = current_position or 0
-            self._attr_is_closed = self._attr_current_cover_position == 0
-            self._attr_available = True
-        except ValueError as e:
-            _LOGGER.error("Update Error: %s", e)
-            self._attr_available = False
+        self._attr_available = True
+
+        # try:
+        #     current_position = await self._device.service_curtain().property_current_position().get()
+        #     self._attr_current_cover_position = current_position or 0
+        #     self._attr_is_closed = self._attr_current_cover_position == 0
+        #     self._attr_available = True
+        # except ValueError as e:
+        #     _LOGGER.error("Update Error: %s", e)
+        #     self._attr_available = False
 
         self.async_write_ha_state()
