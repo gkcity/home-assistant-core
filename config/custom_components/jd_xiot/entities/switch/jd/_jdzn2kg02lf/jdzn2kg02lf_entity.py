@@ -52,11 +52,10 @@ class DeviceJdzn2kg02lfEntity1(SwitchEntity):
         # 设备信息
         self._attr_device_info = DeviceInfo(
             identifiers = {(DOMAIN, detail["did"])},
-            name = f"Light {detail["did"]}",
+            name = detail['additional']['name'],
             manufacturer = "京东智能",
-            model = detail['additional']['name'],
+            model = f"Cover {detail["did"]}",
         )
-
         if isinstance(controller, DeviceJdzn2kg02lf):
             self._device: DeviceJdzn2kg02lf = controller
             self._device.set_operator(
