@@ -89,9 +89,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             for device in self._devices
         }
 
+        default_selected = list(device_options.keys())  # 提取所有设备ID作为默认选中项
+
         return self.async_show_form(
             step_id="devices",
             data_schema=vol.Schema(
-                {vol.Required(SELECTED_DEVICE_IDS): cv.multi_select(device_options)}
+                {
+                    vol.Required(SELECTED_DEVICE_IDS, default=default_selected): cv.multi_select(device_options)
+                }
             ),
         )

@@ -60,7 +60,10 @@ class DeviceJdzn3kg03lfEntity1(SwitchEntity):
         if isinstance(controller, DeviceJdzn3kg03lf):
             self._device: DeviceJdzn3kg03lf = controller
             self._device.set_operator(
-                client.set_property, client.invoke_action, detail["userDeviceId"]
+                client.get_property,
+                client.set_property,
+                client.invoke_action,
+                detail["userDeviceId"]
             )
             _LOGGER.info("Init: %s", detail["did"])
         else:
@@ -99,10 +102,16 @@ class DeviceJdzn3kg03lfEntity1(SwitchEntity):
     async def async_update(self) -> None:
         """Update Status."""
         _LOGGER.info("Update")
-        # ================================================
-        # HA会调用async_update, 在这里更新属性值
-        # ================================================
-        self._attr_available = True
+
+        try:
+            onoff = await self._device.service_switch6().property_on().get()
+            self._attr_is_on = bool(onoff)
+
+            self._attr_available = True
+        except ValueError as e:
+            _LOGGER.error("Update Error: %s", e)
+            self._attr_available = False
+
         self.async_write_ha_state()
 
 @register_switch_entity
@@ -147,7 +156,10 @@ class DeviceJdzn3kg03lfEntity2(SwitchEntity):
         if isinstance(controller, DeviceJdzn3kg03lf):
             self._device: DeviceJdzn3kg03lf = controller
             self._device.set_operator(
-                client.set_property, client.invoke_action, detail["userDeviceId"]
+                client.get_property,
+                client.set_property,
+                client.invoke_action,
+                detail["userDeviceId"]
             )
             _LOGGER.info("Init: %s", detail["did"])
         else:
@@ -186,10 +198,16 @@ class DeviceJdzn3kg03lfEntity2(SwitchEntity):
     async def async_update(self) -> None:
         """Update Status."""
         _LOGGER.info("Update")
-        # ================================================
-        # HA会调用async_update, 在这里更新属性值
-        # ================================================
-        self._attr_available = True
+
+        try:
+            onoff = await self._device.service_switch7().property_on().get()
+            self._attr_is_on = bool(onoff)
+
+            self._attr_available = True
+        except ValueError as e:
+            _LOGGER.error("Update Error: %s", e)
+            self._attr_available = False
+
         self.async_write_ha_state()
 
 @register_switch_entity
@@ -234,7 +252,10 @@ class DeviceJdzn3kg03lfEntity3(SwitchEntity):
         if isinstance(controller, DeviceJdzn3kg03lf):
             self._device: DeviceJdzn3kg03lf = controller
             self._device.set_operator(
-                client.set_property, client.invoke_action, detail["userDeviceId"]
+                client.get_property,
+                client.set_property,
+                client.invoke_action,
+                detail["userDeviceId"]
             )
             _LOGGER.info("Init: %s", detail["did"])
         else:
@@ -273,8 +294,14 @@ class DeviceJdzn3kg03lfEntity3(SwitchEntity):
     async def async_update(self) -> None:
         """Update Status."""
         _LOGGER.info("Update")
-        # ================================================
-        # HA会调用async_update, 在这里更新属性值
-        # ================================================
-        self._attr_available = True
+
+        try:
+            onoff = await self._device.service_switch8().property_on().get()
+            self._attr_is_on = bool(onoff)
+
+            self._attr_available = True
+        except ValueError as e:
+            _LOGGER.error("Update Error: %s", e)
+            self._attr_available = False
+
         self.async_write_ha_state()

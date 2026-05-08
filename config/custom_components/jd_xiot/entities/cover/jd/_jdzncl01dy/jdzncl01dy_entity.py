@@ -75,7 +75,10 @@ class DeviceJdzncl01dyEntity(CoverEntity):
         if isinstance(controller, DeviceJdzncl01dy):
             self._device = controller
             self._device.set_operator(
-                client.set_property, client.invoke_action, detail["userDeviceId"]
+                client.get_property,
+                client.set_property,
+                client.invoke_action,
+                detail["userDeviceId"]
             )
             _LOGGER.info("初始化窗帘成功: %s", self._attr_unique_id)
         else:
@@ -147,30 +150,16 @@ class DeviceJdzncl01dyEntity(CoverEntity):
     # HA 自动刷新状态
     # ------------------------------------------------------
     async def async_update(self) -> None:
-        """Update."""
-        if not self._device:
-            self._attr_available = False
-            return
+        """Update Status."""
+        _LOGGER.info("Update")
 
-        # try:
-        #     # 从设备获取真实位置（你只需要改这一行的获取方法）
-        #     # pos = await self._device.cover_().current_position_().get()
-        #     # self._attr_current_cover_position = pos
-        #     # self._attr_is_closed = pos == 0
-        #     self._attr_available = True
-        # except ValueError as e:
-        #     self._attr_available = False
-        #     _LOGGER.warning("更新窗帘状态失败: %s", e)
+        try:
+            current_position = await self._device.service_curtain().property_current_position().get()
+            self._attr_current_cover_position = current_position or 0
+            self._attr_is_closed = self._attr_current_cover_position == 0
+            self._attr_available = True
+        except ValueError as e:
+            _LOGGER.error("Update Error: %s", e)
+            self._attr_available = False
 
         self.async_write_ha_state()
-
-    # # ------------------------------------------------------
-    # # 属性暴露（HA 自动读取）
-    # # ------------------------------------------------------
-    # @property
-    # def is_closed(self) -> bool:
-    #     return self._attr_is_closed
-    #
-    # @property
-    # def current_cover_position(self) -> int | None:
-    #     return self._attr_current_cover_position

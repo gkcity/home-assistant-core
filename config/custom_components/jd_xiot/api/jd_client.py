@@ -246,8 +246,30 @@ class JingDongClient:
     async def _get_property_local(self, p: PropertyOperation) -> PropertyOperation:
         """Get Property from local."""
         _LOGGER.info("Get Property from Local")
-        p.status = -1
-        p.description = "not implemented"
+        try:
+            pid = str(p.pid)
+            _LOGGER.info("GetProperty.Request: %s", pid)
+            url = f'http://{self._ip}:8080/device/v1/properties?pid={quote(pid)}'
+            headers = {"Content-Type": "application/json"}
+            async with self._session.get(url=url, headers = headers, timeout = self._timeout) as resp:
+                data = await resp.json(content_type=None)
+                _LOGGER.info("GetProperty.Response: %s", data)
+                if data.get("msg", "error") == "ok":
+                    properties: list[PropertyOperation] = PropertyOperationCodec.Get.RESULT.decode(data.get("data", []))
+                    result: PropertyOperation | None = properties[0]
+                    if result is not None:
+                        return result
+                    p.status = Status.UNDEFINED
+                    p.description = "result is empty"
+                else:
+                    p.status = Status.INTERNAL_ERROR
+                    p.description = "result error"
+                return p
+        except ClientError as e:
+            # 3. 补充网络异常捕获
+            _LOGGER.error("GetProperty Local Network Error: %s", e)
+            p.status = Status.INTERNAL_ERROR
+            p.description = f"network error: {e!s}"
         return p
 
     async def _get_property_cloud(self, p: PropertyOperation) -> PropertyOperation:
