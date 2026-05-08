@@ -66,7 +66,7 @@ class DeviceJdzncl01dyEntity(CoverEntity):
         # 设备信息
         self._attr_device_info = DeviceInfo(
             identifiers = {(DOMAIN, detail["did"])},
-            name = f"Light {detail["did"]}",
+            name = f"Cover {detail["did"]}",
             manufacturer = "京东智能",
             model = detail['additional']['name'],
         )

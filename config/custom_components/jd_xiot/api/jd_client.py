@@ -240,8 +240,8 @@ class JingDongClient:
     async def get_property(self, p: PropertyOperation) -> PropertyOperation:
         """Get Action."""
         if self._cookie is None:
-            return await self._get_property_cloud(p)
-        return await self._get_property_local(p)
+            return await self._get_property_local(p)
+        return await self._get_property_cloud(p)
 
     async def _get_property_local(self, p: PropertyOperation) -> PropertyOperation:
         """Get Property from local."""
@@ -260,8 +260,8 @@ class JingDongClient:
     async def invoke_action(self, p: ActionOperation) -> ActionOperation:
         """Invoke Action."""
         if self._cookie is None:
-            return await self._invoke_action_cloud(p)
-        return await self._invoke_action_local(p)
+            return await self._invoke_action_local(p)
+        return await self._invoke_action_cloud(p)
 
     async def _invoke_action_local(self, a: ActionOperation) -> ActionOperation:
         """Invoke Action to local."""

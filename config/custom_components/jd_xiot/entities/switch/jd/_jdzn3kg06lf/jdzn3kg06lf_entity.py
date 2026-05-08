@@ -226,7 +226,7 @@ class DeviceJdzn3kg06lfEntity3(SwitchEntity):
         # 设备信息
         self._attr_device_info = DeviceInfo(
             identifiers = {(DOMAIN, detail["did"])},
-            name = f"Light {detail["did"]}",
+            name = f"Switch {detail["did"]}",
             manufacturer = "京东智能",
             model = detail['additional']['name'],
         )
