@@ -54,7 +54,7 @@ class DeviceJdzn2kg02lfEntity1(SwitchEntity):
             identifiers = {(DOMAIN, detail["did"])},
             name = detail['additional']['name'],
             manufacturer = "京东智能",
-            model = f"Cover {detail["did"]}",
+            model = f"Switch {detail["did"]}",
         )
         if isinstance(controller, DeviceJdzn2kg02lf):
             self._device: DeviceJdzn2kg02lf = controller
@@ -106,6 +106,10 @@ class DeviceJdzn2kg02lfEntity1(SwitchEntity):
             onoff = await self._device.service_switch6().property_on().get()
             self._attr_is_on = bool(onoff)
 
+            name = await self._device.service_switch6().property_name().get()
+            if name is not None and name.strip() != "":
+                self._attr_device_info.name = name
+
             self._attr_available = True
         except ValueError as e:
             _LOGGER.error("Update Error: %s", e)
@@ -149,7 +153,7 @@ class DeviceJdzn2kg02lfEntity2(SwitchEntity):
             identifiers = {(DOMAIN, detail["did"])},
             name = detail['additional']['name'],
             manufacturer = "京东智能",
-            model = f"Cover {detail["did"]}",
+            model = f"Switch {detail["did"]}",
         )
 
         if isinstance(controller, DeviceJdzn2kg02lf):
@@ -201,6 +205,10 @@ class DeviceJdzn2kg02lfEntity2(SwitchEntity):
         try:
             onoff = await self._device.service_switch7().property_on().get()
             self._attr_is_on = bool(onoff)
+
+            name = await self._device.service_switch7().property_name().get()
+            if name is not None and name.strip() != "":
+                self._attr_device_info.name = name
 
             self._attr_available = True
         except ValueError as e:

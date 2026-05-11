@@ -54,7 +54,7 @@ class DeviceJdzn1kg04lfEntity(SwitchEntity):
             identifiers = {(DOMAIN, detail["did"])},
             name = detail['additional']['name'],
             manufacturer = "京东智能",
-            model = f"Cover {detail["did"]}",
+            model = f"Switch {detail["did"]}",
         )
 
         if isinstance(controller, DeviceJdzn1kg04lf):
@@ -106,6 +106,10 @@ class DeviceJdzn1kg04lfEntity(SwitchEntity):
         try:
             onoff = await self._device.service_switch().property_on().get()
             self._attr_is_on = bool(onoff)
+
+            name = await self._device.service_switch().property_name().get()
+            if name is not None and name.strip() != "":
+                self._attr_device_info.name = name
 
             self._attr_available = True
         except ValueError as e:
