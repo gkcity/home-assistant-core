@@ -111,6 +111,10 @@ class DeviceJdzn1kg04lfEntity(SwitchEntity):
             if name is not None and name.strip() != "":
                 self._attr_device_info.name = name
 
+            name1 = await self._device.service_remote_control().property_name().get()
+            if name1 is not None and name1.strip() != "":
+                self._attr_device_info.name = name1
+
             self._attr_available = True
         except ValueError as e:
             _LOGGER.error("Update Error: %s", e)

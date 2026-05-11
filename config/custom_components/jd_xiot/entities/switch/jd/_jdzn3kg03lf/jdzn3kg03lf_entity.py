@@ -111,6 +111,10 @@ class DeviceJdzn3kg03lfEntity1(SwitchEntity):
             if name is not None and name.strip() != "":
                 self._attr_device_info.name = name
 
+            name1 = await self._device.service_remote_control9().property_name().get()
+            if name1 is not None and name1.strip() != "":
+                self._attr_device_info.name = name1
+
             self._attr_available = True
         except ValueError as e:
             _LOGGER.error("Update Error: %s", e)
@@ -211,6 +215,10 @@ class DeviceJdzn3kg03lfEntity2(SwitchEntity):
             if name is not None and name.strip() != "":
                 self._attr_device_info.name = name
 
+            name1 = await self._device.service_remote_control10().property_name().get()
+            if name1 is not None and name1.strip() != "":
+                self._attr_device_info.name = name1
+
             self._attr_available = True
         except ValueError as e:
             _LOGGER.error("Update Error: %s", e)
@@ -310,6 +318,10 @@ class DeviceJdzn3kg03lfEntity3(SwitchEntity):
             name = await self._device.service_switch8().property_name().get()
             if name is not None and name.strip() != "":
                 self._attr_device_info.name = name
+
+            name1 = await self._device.service_remote_control11().property_name().get()
+            if name1 is not None and name1.strip() != "":
+                self._attr_device_info.name = name1
 
             self._attr_available = True
         except ValueError as e:
