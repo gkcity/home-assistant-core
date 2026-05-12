@@ -1,4 +1,4 @@
-"""JingDong Client Session using Cookie."""
+"""JingDong Client."""
 
 import json
 import logging

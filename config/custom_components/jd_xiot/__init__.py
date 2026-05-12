@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 
 from .api.const import JD_CENTRAL_SCREEN_IP
 from .api.jd_client import JingDongClient
+from .api.jd_config_view import register_jd_config_api
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,9 +18,18 @@ _PLATFORMS: list[Platform] = [Platform.LIGHT, Platform.SWITCH, Platform.COVER]
 # 定义配置条目的类型
 type JdXiotConfigEntry = ConfigEntry[JingDongClient]
 
+async def async_setup(hass: HomeAssistant, config: dict):
+    """Set up JingDong XIoT."""
+    _LOGGER.info("Async Setup")
+    await register_jd_config_api(hass)
+    return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: JdXiotConfigEntry) -> bool:
     """Set up JingDong XIoT from a config entry."""
+
+    _LOGGER.info("Async Setup Entry")
+
+    await register_jd_config_api(hass)
 
     ip = entry.data[JD_CENTRAL_SCREEN_IP]
 
