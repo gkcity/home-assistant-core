@@ -307,9 +307,9 @@ class DeviceJdzn3kg06lfEntity3(SwitchEntity):
             onoff = await self._device.service_switch8().property_on().get()
             self._attr_is_on = bool(onoff)
 
-            name0 = await self._device.service_switch8().property_name().get()
-            if name0 is not None and name0.strip() != "":
-                self._attr_name = name0
+            name = await self._device.service_switch8().property_name().get()
+            if name is not None and name.strip() != "":
+                self._attr_name = name
 
             self._attr_available = True
         except ValueError as e:
