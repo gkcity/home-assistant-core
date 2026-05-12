@@ -16,6 +16,8 @@ from xiot_core.spec.typedef.status.status import Status
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 
+from .const import JD_AUTH_TYPE_SCREEN
+from .jd_config_data import JdConfigData
 from .typedef.joy_device_detail import (
     JoyDeviceDetail,
     joy_device_detail_decode_array,
@@ -30,12 +32,11 @@ class JingDongClient:
     """JingDong Client Session."""
 
     def __init__(
-        self, hass: HomeAssistant, cookie: str | None = None, ip: str | None = None, session: ClientSession | None = None
+        self, hass: HomeAssistant, cookie: str | None = None, data: JdConfigData | None = None, session: ClientSession | None = None
     ) -> None:
         """Initialize the API client."""
         self._hass = hass
-        self._cookie = cookie
-        self._ip = ip
+        self._data: JdConfigData | None = data
         self._timeout = ClientTimeout(connect=3.0, sock_read=3.0, total=6.0)
         if session is None:
             _LOGGER.info("Initialize a new session")
@@ -47,7 +48,12 @@ class JingDongClient:
     async def _request(self, method: str, url: str, **kwargs) -> ClientResponse:
         """Make an HTTP request with the cookie."""
         headers = kwargs.pop("headers", {})
-        headers["Cookie"] = self._cookie
+
+        if self._data is not None:
+            headers["Cookie"] = self._data.account_cookie
+        else:
+            _LOGGER.error("Cookie is None")
+
         kwargs["headers"] = headers
         return await self._session.request(method, url, **kwargs)
 
@@ -63,7 +69,7 @@ class JingDongClient:
 
     # 实现调用京东 API 获取房屋列表，并验证 Cookie
     # 返回 (True, [{"id": "xxx", "name": "我家"}, ...]) 或 (False, [])
-    async def async_get_houses(self, cookie: str) -> tuple[bool, list[JoyHouse]]:
+    async def async_get_houses(self, cookie: str, signature: bool) -> tuple[bool, list[JoyHouse]]:
         """Get Houses from Cloud API."""
         headers = {"Cookie": cookie}
         try:
@@ -80,8 +86,60 @@ class JingDongClient:
                         return True, houses
                 return False, []
         except ClientError as e:
-            _LOGGER.error("Error testing cookie: %s", e)
+            _LOGGER.error("Error get houses: %s", e)
             return False, []
+
+    async def async_get_devices(self) -> list[JoyDeviceDetail]:
+        """Get Devices from Cloud or Local."""
+        if self._data is None:
+            return []
+
+        if self._data.auth_type == "screen":
+            return await self.async_get_devices_by_local(self._data.screen_ip)
+
+        valid, houses = await self.async_get_houses(self._data.account_cookie, False)
+        if valid and houses:
+            house = next((h for h in houses if h["id"] == self._data.account_house_id), None)
+            if house is not None:
+                return await self.async_get_devices_by_house(self._data.account_cookie, house, False)
+            _LOGGER.error("GetHouse Failed, House not exist!")
+            return []
+
+        _LOGGER.error("GetHouses Failed!")
+        return []
+
+
+    async def async_get_devices_by_house(self, cookie: str, house: JoyHouse, signature: bool) -> list[JoyDeviceDetail]:
+        """Get device list under a specific house."""
+        headers = {"Cookie": cookie}
+        body_dict = {"userDeviceIds": get_all_user_device_ids(house)}
+        body_json = json.dumps(body_dict, separators=(",", ":"))
+        body_encoded = quote(body_json)  # URL 编码
+        url = (
+                "https://api.m.jd.com/api?functionId=smarthome_screen_getDeviceInfo&appid=device-debugger&body="
+                + body_encoded
+        )
+        try:
+            async with self._session.get(url=url, headers=headers) as resp:
+                if resp.status == 200:
+                    data = await resp.json(content_type=None)
+                    if data.get("code") == 0:
+                        devices: list[JoyDeviceDetail] = joy_device_detail_decode_array(
+                            data.get("data", {}).get("devices", [])
+                        )
+                        _LOGGER.info("Devices.length: %d", len(devices))
+                        return devices
+                    _LOGGER.error(
+                        "GetDevicesByHouse, code: %d, message: %s",
+                        data.get("code"),
+                        data.get("message"),
+                    )
+                else:
+                    _LOGGER.info("Status: %d", resp.status)
+                return []
+        except ClientError as e:
+            _LOGGER.error("Error get devices by house: %s", e)
+            return []
 
     # GET http://10.10.10.141:8080/device/v1/devices
     async def async_get_devices_by_local(self, ip: str) -> list[JoyDeviceDetail]:
@@ -104,7 +162,7 @@ class JingDongClient:
             _LOGGER.error("Error get devices by local: %s", e)
             return []
 
-    async def async_get_devices_by_house(self, cookie: str, house: JoyHouse) -> list[JoyDeviceDetail]:
+    async def async_get_device_by_house(self, cookie: str, house: JoyHouse) -> list[JoyDeviceDetail]:
         """Get Devices from Cloud API."""
         _LOGGER.info("Get Device By House")
         headers = {"Cookie": cookie}
@@ -143,36 +201,26 @@ class JingDongClient:
 
     async def async_get_devices_info_local(self, deviceIds: list[str]) -> list[JoyDeviceDetail]:
         """Get devices info from local."""
-        if self._ip is None:
+
+        if self._data is None:
+            _LOGGER.error("GetDevicesInfo, data is None")
             return []
 
-        devices: list[JoyDeviceDetail] = await self.async_get_devices_by_local(self._ip)
+        devices: list[JoyDeviceDetail] = await self.async_get_devices_by_local(self._data.screen_ip)
         device_ids_set = set(deviceIds)
         return [d for d in devices if d['did'] in device_ids_set]
 
-    # async def async_get_devices_info_cloud(self, userDeviceIds: list[int]) -> list[JoyDeviceDetail]:
-    #     """Get devices info."""
-    #     body_dict = {"userDeviceIds": userDeviceIds}
-    #     body_json = json.dumps(body_dict, separators=(",", ":"))
-    #     body_encoded = quote(body_json)  # URL 编码
-    #     url = (
-    #         "https://api.m.jd.com/api?functionId=smarthome_screen_getDeviceInfo&appid=device-debugger&body="
-    #         + body_encoded
-    #     )
-    #     resp = await self._request("get", url)
-    #     data = await resp.json(content_type=None)
-    #     if data.get("code") == 0:
-    #         devices: list[JoyDeviceDetail] = joy_device_detail_decode_array(
-    #             data.get("data", {}).get("devices", [])
-    #         )
-    #         return devices
-    #     return []
-
     async def set_property(self, p: PropertyOperation) -> PropertyOperation:
         """Set Property."""
-        if self._cookie is None:
+        if self._data is None:
+            _LOGGER.error("set_property error, data is None")
+            p.status = -1000
+            p.description = "data is None"
+            return p
+
+        if self._data.auth_type == JD_AUTH_TYPE_SCREEN:
             return await self._set_property_local(p)
-        return await self._set_property_cloud(p)
+        return await self._set_property_local(p)
 
     async def _set_property_local(self, p: PropertyOperation) -> PropertyOperation:
         """Set Property to Local."""
@@ -181,7 +229,7 @@ class JingDongClient:
             body_dict = PropertyOperationCodec.Set.QUERY.encode([p])
             body_json = json.dumps(body_dict, separators=(",", ":"))
             _LOGGER.info("SetProperty.Request: %s", body_json)
-            url = f'http://{self._ip}:8080/device/v1/properties'
+            url = f'http://{self._data.screen_ip}:8080/device/v1/properties'
             # 2. 设置JSON请求头 + 传入字符串类型的body
             headers = {"Content-Type": "application/json"}
             async with self._session.put(url=url, data = body_json, headers = headers, timeout = self._timeout) as resp:
@@ -238,8 +286,15 @@ class JingDongClient:
         return p
 
     async def get_property(self, p: PropertyOperation) -> PropertyOperation:
-        """Get Action."""
-        if self._cookie is None:
+        """Get Property."""
+
+        if self._data is None:
+            _LOGGER.error("get_property error, data is None")
+            p.status = -1000
+            p.description = "data is None"
+            return p
+
+        if self._data.auth_type == JD_AUTH_TYPE_SCREEN:
             return await self._get_property_local(p)
         return await self._get_property_cloud(p)
 
@@ -249,7 +304,7 @@ class JingDongClient:
         try:
             pid = str(p.pid)
             _LOGGER.info("GetProperty.Request: %s", pid)
-            url = f'http://{self._ip}:8080/device/v1/properties?pid={quote(pid)}'
+            url = f'http://{self._data.screen_ip}:8080/device/v1/properties?pid={quote(pid)}'
             headers = {"Content-Type": "application/json"}
             async with self._session.get(url=url, headers = headers, timeout = self._timeout) as resp:
                 data = await resp.json(content_type=None)
@@ -281,7 +336,13 @@ class JingDongClient:
 
     async def invoke_action(self, p: ActionOperation) -> ActionOperation:
         """Invoke Action."""
-        if self._cookie is None:
+        if self._data is None:
+            _LOGGER.error("invoke_action error, data is None")
+            p.status = -1000
+            p.description = "data is None"
+            return p
+
+        if self._data.auth_type == JD_AUTH_TYPE_SCREEN:
             return await self._invoke_action_local(p)
         return await self._invoke_action_cloud(p)
 
@@ -292,7 +353,7 @@ class JingDongClient:
             body_dict = ActionOperationCodec.QUERY.encode([a])
             body_json = json.dumps(body_dict, separators=(",", ":"))
             _LOGGER.info("InvokeAction.Request: %s", body_json)
-            url = f'http://{self._ip}:8080/device/v1/actions'
+            url = f'http://{self._data.screen_ip}:8080/device/v1/actions'
             # 2. 设置JSON请求头 + 传入字符串类型的body
             headers = {"Content-Type": "application/json"}
             async with self._session.put(url=url, data = body_json, headers = headers) as resp:

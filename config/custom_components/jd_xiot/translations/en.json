@@ -1,11 +1,36 @@
 {
     "config": {
         "step": {
-            "central_screen_ip": {
+            "auth": {
+                "title": "京东小家 - 认证方式",
+                "description": "请选择认证方式"
+            },
+            "screen": {
                 "title": "京东小家 - 配置中控屏",
                 "description": "请输入中控屏IP地址",
                 "data": {
                     "ip": "IP"
+                }
+            },
+            "account": {
+                "title": "京东小家 - 输入 Cookie",
+                "description": "请点击以下链接手动获取 Cookie: \n[{url}]({url})",
+                "data": {
+                  "cookie": "Cookie"
+                }
+            },
+            "account_with_signature": {
+                "title": "京东小家 - 输入 wskey",
+                "description": "请到AIPC上获取wskey",
+                "data": {
+                  "wskey": "wskey"
+                }
+            },
+            "house": {
+                "title": "京东小家 - 选择房屋",
+                "description": "请选择您的房屋",
+                "data": {
+                  "house_id": "房屋"
                 }
             },
             "devices": {
