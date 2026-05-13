@@ -64,7 +64,7 @@ class JingdongClientAccountImpl(JingDongClient):
         return [d for d in devices if d["did"] in deviceIds]
 
     async def set_property(self, p: PropertyOperation) -> PropertyOperation:
-        """Set Property to Cloud."""
+        """Set Property."""
         body_dict = {
             "userDeviceId": p.context,
             "properties": PropertyOperationCodec.Set.QUERY.encode([p]),
@@ -128,7 +128,7 @@ class JingdongClientAccountImpl(JingDongClient):
         return p
 
     async def invoke_action(self, a: ActionOperation) -> ActionOperation:
-        """Invoke Action to cloud."""
+        """Invoke Action."""
         _LOGGER.info("Invoke Action to Cloud")
         body_dict = {
             "userDeviceId": a.context,
