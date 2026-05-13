@@ -25,13 +25,13 @@ class JdConfigData:
         self.__selected_device_ids: list[str] = []
 
         # 房屋列表（运行时的数据，不保存）
-        self.__runtime_houses: list[JoyHouse] = []
+        self.__all_houses: list[JoyHouse] = []
 
         # 设备列表（运行时的数据，不保存）
-        self.__runtime_devices: list[JoyDeviceDetail] = []
+        self.__all_devices: list[JoyDeviceDetail] = []
 
         # 选中的房屋（运行时的数据，不保存）
-        self.__runtime_selected_house: JoyHouse | None = None
+        self.__selected_house: JoyHouse | None = None
 
     @property
     def auth_type(self) -> str:
@@ -84,34 +84,34 @@ class JdConfigData:
         self.__selected_device_ids = value
 
     @property
-    def runtime_devices(self) -> list[JoyDeviceDetail]:
+    def devices(self) -> list[JoyDeviceDetail]:
         """Get All Devices for runtime."""
-        return self.__runtime_devices
+        return self.__all_devices
 
-    @runtime_devices.setter
-    def runtime_devices(self, value: list[JoyDeviceDetail]) -> None:
+    @devices.setter
+    def devices(self, value: list[JoyDeviceDetail]) -> None:
         """Set All Devices for runtime."""
-        self.__runtime_devices = value
+        self.__all_devices = value
 
     @property
-    def runtime_houses(self) -> list[JoyHouse]:
+    def houses(self) -> list[JoyHouse]:
         """Get Houses for runtime."""
-        return self.__runtime_houses
+        return self.__all_houses
 
-    @runtime_houses.setter
-    def runtime_houses(self, value: list[JoyHouse]) -> None:
+    @houses.setter
+    def houses(self, value: list[JoyHouse]) -> None:
         """Set Houses for runtime."""
-        self.__runtime_houses = value
+        self.__all_houses = value
 
     @property
-    def runtime_selected_house(self) -> JoyHouse | None:
+    def selected_house(self) -> JoyHouse | None:
         """Get Selected House for runtime."""
-        return self.__runtime_selected_house
+        return self.__selected_house
 
-    @runtime_selected_house.setter
-    def runtime_selected_house(self, value: JoyHouse) -> None:
+    @selected_house.setter
+    def selected_house(self, value: JoyHouse) -> None:
         """Set Selected House for runtime."""
-        self.__runtime_selected_house = value
+        self.__selected_house = value
 
     @property
     def entry_title(self) -> str:
@@ -120,10 +120,10 @@ class JdConfigData:
             return f"京东IoT (中控屏 {self.__screen_ip})"
 
         if self.__auth_type == JD_AUTH_TYPE_ACCOUNT:
-            return f"京东IoT (账号 {self.__runtime_selected_house['name']})"
+            return f"京东IoT (账号 {self.__selected_house['name']})"
 
         if self.__auth_type == JD_AUTH_TYPE_ACCOUNT_WITH_SIGNATURE:
-            return f"京东IoT (AIPC账号 {self.__runtime_selected_house['name']})"
+            return f"京东IoT (AIPC账号 {self.__selected_house['name']})"
 
         return "京东IoT"
 

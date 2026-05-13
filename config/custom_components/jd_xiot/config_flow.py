@@ -102,7 +102,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             # 只有在用户输入后才初始化client（此时hass已正确注入）
             self._client = create_jd_client(self.hass, self._config_data)
-            self._config_data.selected_devices = await self._client.async_get_devices()
+            self._config_data.devices = await self._client.async_get_devices()
 
             return await self.async_step_devices()
 
@@ -126,7 +126,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # 验证Cookie并获取房屋列表
             valid, houses = await self._client.async_get_houses()
             if valid and houses:
-                self._config_data.runtime_houses = houses
+                self._config_data.houses = houses
                 return await self.async_step_account_house()
             if not valid:
                 errors["base"] = "invalid_cookie"
@@ -157,7 +157,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # 验证Cookie并获取房屋列表
             valid, houses = await self._client.async_get_houses()
             if valid and houses:
-                self._config_data.runtime_houses = houses
+                self._config_data.houses = houses
                 return await self.async_step_account_house()
             if not valid:
                 errors["base"] = "invalid_wskey"
@@ -177,24 +177,24 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            selected_house_id = user_input[JD_SELECTED_HOUSE_ID]
+            self._config_data.account_house_id = user_input[JD_SELECTED_HOUSE_ID]
 
             # 查找选中的房屋
-            self._config_data.runtime_selected_house = next(
-                (h for h in self._config_data.runtime_houses if h["id"] == selected_house_id), None
+            self._config_data.selected_house = next(
+                (h for h in self._config_data.houses if h["id"] == self._config_data.account_house_id), None
             )
 
-            if not self._config_data.runtime_selected_house:
+            if not self._config_data.selected_house:
                 return self.async_abort(reason="house_not_found")
 
             # 获取该房屋下的设备列表
-            self._config_data.selected_devices = await self._client.async_get_devices()
+            self._config_data.devices = await self._client.async_get_devices()
 
             # 跳转到设备选择步骤
             return await self.async_step_devices()
 
         # 构建房屋选择选项
-        house_options = {house["id"]: house["name"] for house in self._config_data.runtime_houses}
+        house_options = {house["id"]: house["name"] for house in self._config_data.houses}
         return self.async_show_form(
             step_id="account_house",
             data_schema=vol.Schema({
@@ -223,7 +223,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # 构建设备多选框
         device_options = {
             str(device["did"]): f"{device['additional']['name']} ({device['summary'].type})"
-            for device in self._config_data.runtime_devices
+            for device in self._config_data.devices
         }
         default_selected = list(device_options.keys())
 
@@ -260,7 +260,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         # 重新拉取最新设备列表
         self._client = create_jd_client(self.hass, self._config_data)
-        self._config_data.runtime_devices = await self._client.async_get_devices()
+        self._config_data.devices = await self._client.async_get_devices()
 
         # 进入设备选择步骤
         return await self.async_step_devices()
@@ -278,7 +278,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         # 构建设备多选框
         device_options = {
             str(device["did"]): f"{device['additional']['name']} ({device['summary'].type})"
-            for device in self._config_data.runtime_devices
+            for device in self._config_data.devices
         }
         default_selected = self._config_data.selected_devices
         return self.async_show_form(

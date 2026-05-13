@@ -2,14 +2,14 @@
 
 import logging
 
-from api.jd_client import JingDongClient
-from api.typedef.joy_device_detail import JoyDeviceDetail
-from api.typedef.joy_house import JoyHouse
 from xiot_core.spec.typedef.operation.action_operation import ActionOperation
 from xiot_core.spec.typedef.operation.property_operation import PropertyOperation
 
-_LOGGER = logging.getLogger(__name__)
+from .jd_client import JingDongClient
+from .typedef.joy_device_detail import JoyDeviceDetail
+from .typedef.joy_house import JoyHouse
 
+_LOGGER = logging.getLogger(__name__)
 
 class JingdongClientAccountWithSignatureImpl(JingDongClient):
     """JingDong Client Account implementation."""
