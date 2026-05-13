@@ -20,8 +20,8 @@ from .const import JD_AUTH_TYPE_SCREEN
 from .jd_config_data import JdConfigData
 from .typedef.joy_device_detail import (
     JoyDeviceDetail,
-    joy_device_detail_decode_array,
-    joy_device_detail_decode_array_local,
+    joy_device_detail_decode_array_from_cloud,
+    joy_device_detail_decode_array_from_local,
 )
 from .typedef.joy_house import JoyHouse, get_all_user_device_ids, joy_house_decode_array
 
@@ -113,7 +113,6 @@ class JingDongClient:
         _LOGGER.error("GetHouses Failed!")
         return []
 
-
     async def async_get_devices_by_house(self, cookie: str, house: JoyHouse, signature: bool) -> list[JoyDeviceDetail]:
         """Get device list under a specific house."""
         headers = {"Cookie": cookie}
@@ -129,7 +128,7 @@ class JingDongClient:
                 if resp.status == 200:
                     data = await resp.json(content_type=None)
                     if data.get("code") == 0:
-                        devices: list[JoyDeviceDetail] = joy_device_detail_decode_array(
+                        devices: list[JoyDeviceDetail] = joy_device_detail_decode_array_from_cloud(
                             data.get("data", {}).get("devices", [])
                         )
                         _LOGGER.info("Devices.length: %d", len(devices))
@@ -156,7 +155,7 @@ class JingDongClient:
                 if resp.status == 200:
                     data = await resp.json(content_type=None)
                     if data.get("msg") == 'ok':
-                        devices: list[JoyDeviceDetail] = joy_device_detail_decode_array_local(data.get("data", []))
+                        devices: list[JoyDeviceDetail] = joy_device_detail_decode_array_from_local(data.get("data", []))
                         _LOGGER.info("Devices.length: %d", len(devices))
                         return devices
                     _LOGGER.error("Get Device By Local: %s", data.get("msg", ""))
@@ -183,7 +182,7 @@ class JingDongClient:
                 if resp.status == 200:
                     data = await resp.json(content_type=None)
                     if data.get("code") == 0:
-                        devices: list[JoyDeviceDetail] = joy_device_detail_decode_array(
+                        devices: list[JoyDeviceDetail] = joy_device_detail_decode_array_from_cloud(
                             data.get("data", {}).get("devices", [])
                         )
                         _LOGGER.info("Devices.length: %d", len(devices))
@@ -202,7 +201,9 @@ class JingDongClient:
 
     async def async_get_devices_info(self, deviceIds: list[str]) -> list[JoyDeviceDetail]:
         """Get devices info."""
-        return await self.async_get_devices_info_local(deviceIds)
+
+        devices: list[JoyDeviceDetail] = await self.async_get_devices()
+        return [d for d in devices if d["did"] in deviceIds]
 
     async def async_get_devices_info_local(self, deviceIds: list[str]) -> list[JoyDeviceDetail]:
         """Get devices info from local."""
@@ -334,9 +335,34 @@ class JingDongClient:
 
     async def _get_property_cloud(self, p: PropertyOperation) -> PropertyOperation:
         """Get Property from cloud."""
-        _LOGGER.info("Get Property from Cloud")
-        p.status = -1
-        p.description = "not implemented"
+        body_dict = {
+            "userDeviceId": p.context,
+            "pids": PropertyOperationCodec.Get.QUERY.encode([p]),
+        }
+        body_json = json.dumps(body_dict, separators=(",", ":"))
+        _LOGGER.info("GetProperty from Cloud: %s", body_json)
+        body_encoded = quote(body_json)  # URL 编码
+        url = (
+            "https://api.m.jd.com/api?functionId=smarthome_app_debug_getProperties&appid=device-debugger&body="
+            + body_encoded
+        )
+        resp = await self._request("get", url)
+        data = await resp.json(content_type=None)
+        _LOGGER.info("GetProperty.Response: %s", data)
+        if data.get("code") == "0":
+            properties: list[PropertyOperation] = (
+                PropertyOperationCodec.Get.RESULT.decode(
+                    data.get("result", {}).get("properties", [])
+                )
+            )
+            result: PropertyOperation | None = properties[0]
+            if result is not None:
+                return result
+            p.status = Status.UNDEFINED
+            p.description = "result is empty"
+        else:
+            p.status = Status.INTERNAL_ERROR
+            p.description = "result error"
         return p
 
     async def invoke_action(self, p: ActionOperation) -> ActionOperation:
