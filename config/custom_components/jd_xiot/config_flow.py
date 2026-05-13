@@ -21,13 +21,12 @@ from .api.const import (
     JD_WSKEY,
 )
 from .api.jd_client import JingDongClient
+from .api.jd_client_factory import create_jd_client
 from .api.jd_config_data import (
     JdConfigData,
     jd_config_data_decode,
     jd_config_data_encode,
 )
-from .api.typedef.joy_device_detail import JoyDeviceDetail
-from .api.typedef.joy_house import JoyHouse
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,20 +63,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize flow."""
-
-        # 通用属性
-        self._session: JingDongClient | None = None
-        self._auth_type: str = ""          # 认证类型 (screen/account/account-with-signature)
-        self._devices: list[JoyDeviceDetail] = []  # 设备列表
-        self._selected_device_ids: list[str] = []  # 选中的设备ID
-
-        # 中控屏认证相关
-        self._screen_ip: str = ""          # 中控屏IP
-
-        # 账号认证相关
-        self._cookie: str = ""             # JD Cookie
-        self._houses: list[JoyHouse] = []  # 房屋列表
-        self._selected_house: JoyHouse | None = None  # 选中的房屋
+        self._client: JingDongClient | None = None
+        self._config_data: JdConfigData = JdConfigData()
 
     async def async_step_user(self, user_input=None):
         """Step 0: 入口步骤，直接跳转到认证类型选择步骤."""
@@ -89,13 +76,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            self._auth_type = user_input[JD_AUTH_TYPE]
+            self._config_data.auth_type = user_input[JD_AUTH_TYPE]
             # 根据认证类型跳转到对应步骤
-            if self._auth_type == JD_AUTH_TYPE_SCREEN:
+            if self._config_data.auth_type == JD_AUTH_TYPE_SCREEN:
                 return await self.async_step_screen()
-            if self._auth_type == JD_AUTH_TYPE_ACCOUNT:
+            if self._config_data.auth_type == JD_AUTH_TYPE_ACCOUNT:
                 return await self.async_step_account()
-            if self._auth_type == JD_AUTH_TYPE_ACCOUNT_WITH_SIGNATURE:
+            if self._config_data.auth_type == JD_AUTH_TYPE_ACCOUNT_WITH_SIGNATURE:
                 return await self.async_step_account_with_signature()
 
         # 显示认证类型选择表单，step_id必须和方法保持一致
@@ -111,12 +98,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            # 只有在用户输入后才初始化session（此时hass已正确注入）
-            self._session = JingDongClient(self.hass)
+            self._config_data.screen_ip = user_input[JD_SCREEN_IP]
 
-            self._screen_ip = user_input[JD_SCREEN_IP]
-
-            self._devices = await self._session.async_get_devices_by_local(self._screen_ip)
+            # 只有在用户输入后才初始化client（此时hass已正确注入）
+            self._client = create_jd_client(self.hass, self._config_data)
+            self._config_data.selected_devices = await self._client.async_get_devices()
 
             return await self.async_step_devices()
 
@@ -132,14 +118,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            # 只有在用户输入后才初始化session（此时hass已正确注入）
-            self._session = JingDongClient(self.hass)
-            self._cookie = user_input[JD_COOKIE]
+            self._config_data.account_cookie = user_input[JD_COOKIE]
+
+            # 只有在用户输入后才初始化client（此时hass已正确注入）
+            self._client = create_jd_client(self.hass, self._config_data)
 
             # 验证Cookie并获取房屋列表
-            valid, houses = await self._session.async_get_houses(self._cookie, False)
+            valid, houses = await self._client.async_get_houses()
             if valid and houses:
-                self._houses = houses
+                self._config_data.runtime_houses = houses
                 return await self.async_step_account_house()
             if not valid:
                 errors["base"] = "invalid_cookie"
@@ -162,14 +149,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
+            self._config_data.account_cookie = "wskey=" + user_input[JD_WSKEY]
+
             # 只有在用户输入后才初始化session（此时hass已正确注入）
-            self._session = JingDongClient(self.hass)
-            self._cookie = "wskey=" + user_input[JD_WSKEY]
+            self._client = create_jd_client(self.hass, self._config_data)
 
             # 验证Cookie并获取房屋列表
-            valid, houses = await self._session.async_get_houses(self._cookie, True)
+            valid, houses = await self._client.async_get_houses()
             if valid and houses:
-                self._houses = houses
+                self._config_data.runtime_houses = houses
                 return await self.async_step_account_house()
             if not valid:
                 errors["base"] = "invalid_wskey"
@@ -192,24 +180,21 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             selected_house_id = user_input[JD_SELECTED_HOUSE_ID]
 
             # 查找选中的房屋
-            self._selected_house = next(
-                (h for h in self._houses if h["id"] == selected_house_id), None
+            self._config_data.runtime_selected_house = next(
+                (h for h in self._config_data.runtime_houses if h["id"] == selected_house_id), None
             )
 
-            if not self._selected_house:
+            if not self._config_data.runtime_selected_house:
                 return self.async_abort(reason="house_not_found")
 
-            # 是否需要签名
-            signature = self._auth_type == JD_AUTH_TYPE_ACCOUNT_WITH_SIGNATURE
-
             # 获取该房屋下的设备列表
-            self._devices = await self._session.async_get_devices_by_house(self._cookie, self._selected_house, signature)
+            self._config_data.selected_devices = await self._client.async_get_devices()
 
             # 跳转到设备选择步骤
             return await self.async_step_devices()
 
         # 构建房屋选择选项
-        house_options = {house["id"]: house["name"] for house in self._houses}
+        house_options = {house["id"]: house["name"] for house in self._config_data.runtime_houses}
         return self.async_show_form(
             step_id="account_house",
             data_schema=vol.Schema({
@@ -224,21 +209,21 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            self._selected_device_ids = user_input[JD_SELECTED_DEVICE_IDS]
+            self._config_data.selected_devices = user_input[JD_SELECTED_DEVICE_IDS]
 
             # 构建最终的配置数据
-            config_data = self._build_config_data()
+            config_data = jd_config_data_encode(self._config_data)
 
             # 创建配置条目
             return self.async_create_entry(
-                title=self._build_entry_title(),
+                title=self._config_data.entry_title,
                 data=config_data
             )
 
         # 构建设备多选框
         device_options = {
             str(device["did"]): f"{device['additional']['name']} ({device['summary'].type})"
-            for device in self._devices
+            for device in self._config_data.runtime_devices
         }
         default_selected = list(device_options.keys())
 
@@ -261,56 +246,21 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Options Flow."""
         return OptionsFlowHandler(entry)
 
-    # ==================== 辅助方法 ====================
-    def _build_config_data(self) -> dict[str, object]:
-        """构建最终的配置数据（统一格式）."""
-
-        data: JdConfigData = JdConfigData()
-        data.auth_type = self._auth_type
-        data.devices = self._selected_device_ids
-
-        # 根据认证类型填充auth字段
-        if self._auth_type == JD_AUTH_TYPE_SCREEN:
-            data.screen_ip = self._screen_ip
-
-        if self._auth_type in (JD_AUTH_TYPE_ACCOUNT, JD_AUTH_TYPE_ACCOUNT_WITH_SIGNATURE):
-            data.account_cookie = self._cookie
-            data.account_house_id = self._selected_house["id"]
-
-        return jd_config_data_encode(data)
-
-    def _build_entry_title(self) -> str:
-        """构建配置条目标题."""
-        if self._auth_type == JD_AUTH_TYPE_SCREEN:
-            return f"京东IoT (中控屏 {self._screen_ip})"
-
-        if self._auth_type in (JD_AUTH_TYPE_ACCOUNT, JD_AUTH_TYPE_ACCOUNT_WITH_SIGNATURE):
-            return f"京东IoT (账号 {self._selected_house['name']})"
-
-        return "京东IoT"
-
 # ================== 运行过程中，可以重新选择设备列表 ==================
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options flow for JingDong XIoT."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self._data: JdConfigData = jd_config_data_decode(config_entry.data)
-
-        # 通用属性
-        self._session: JingDongClient | None = None
-        self._devices: list[JoyDeviceDetail] = []  # 设备列表
-        self._selected_device_ids: list[str] = []  # 选中的设备ID
+        self._config_data: JdConfigData = jd_config_data_decode(config_entry.data)
+        self._client: JingDongClient | None = None
 
     async def async_step_init(self, user_input=None):
         """Initialize options flow (入口)."""
 
-        # 从现有配置条目获取已保存的配置
-        self._selected_device_ids = self._data.devices
-
         # 重新拉取最新设备列表
-        self._session = JingDongClient(self.hass, data = self._data)
-        self._devices = await self._session.async_get_devices()
+        self._client = create_jd_client(self.hass, self._config_data)
+        self._config_data.runtime_devices = await self._client.async_get_devices()
 
         # 进入设备选择步骤
         return await self.async_step_devices()
@@ -318,10 +268,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_devices(self, user_input=None):
         """Options flow: 重新选择设备."""
         if user_input is not None:
-            # 更新配置条目的 data（也可以使用 options，这里与你现有逻辑保持一致）
-            # new_data = {**self.config_entry.data, JD_SELECTED_DEVICE_IDS: user_input[JD_SELECTED_DEVICE_IDS]}
-            self._data.devices = user_input[JD_SELECTED_DEVICE_IDS]
-            new_data = jd_config_data_encode(self._data)
+            self._config_data.selected_devices = user_input[JD_SELECTED_DEVICE_IDS]
+            new_data = jd_config_data_encode(self._config_data)
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
             # 重载集成使新选择生效
             await self.hass.config_entries.async_reload(self.config_entry.entry_id)
@@ -330,9 +278,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         # 构建设备多选框
         device_options = {
             str(device["did"]): f"{device['additional']['name']} ({device['summary'].type})"
-            for device in self._devices
+            for device in self._config_data.runtime_devices
         }
-        default_selected = self._selected_device_ids
+        default_selected = self._config_data.selected_devices
         return self.async_show_form(
             step_id="devices",
             data_schema=vol.Schema({

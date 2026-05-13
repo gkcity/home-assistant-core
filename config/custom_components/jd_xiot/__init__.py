@@ -6,7 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .api.jd_client import JingDongClient
+from .api.jd_client import JingDongClientLocal
 from .api.jd_config_data import JdConfigData, jd_config_data_decode
 from .api.jd_config_view import register_jd_config_api
 
@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 _PLATFORMS: list[Platform] = [Platform.LIGHT, Platform.SWITCH, Platform.COVER]
 
 # 定义配置条目的类型
-type JdXiotConfigEntry = ConfigEntry[JingDongClient]
+type JdXiotConfigEntry = ConfigEntry[JingDongClientLocal]
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up JingDong XIoT."""
@@ -34,7 +34,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: JdXiotConfigEntry) -> bo
     data: JdConfigData = jd_config_data_decode(entry.data)
 
     # 初始化客户端
-    client = JingDongClient(hass = hass, data = data)
+    client = JingDongClientLocal(hass = hass, data = data)
 
     # 测试客户端是否正常工作
     # try:

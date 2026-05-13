@@ -31,7 +31,7 @@ async def async_setup_entry(
     client: JingDongClient = entry.runtime_data
 
     # 2. 从 entry.data 获取保存的设备ID列表（添加集成时选择的设备）
-    selected_device_ids: list[str] = client.data.devices
+    selected_device_ids: list[str] = client.data.selected_devices
 
     _LOGGER.info("Selected device IDs for JD XIoT: %s", selected_device_ids)
 

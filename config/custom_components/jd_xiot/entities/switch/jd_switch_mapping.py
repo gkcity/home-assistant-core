@@ -33,7 +33,7 @@ def create_switch_entity(
 
     Args:
         device_type: DeviceType
-        api: API
+        client: JingDongClient
         detail: JoyDeviceDetail
 
     Returns:

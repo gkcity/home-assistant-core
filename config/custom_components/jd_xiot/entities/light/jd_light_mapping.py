@@ -35,7 +35,7 @@ def create_light_entity(
 
     Args:
         device_type: Device Type
-        client: JingDongXiotClient
+        client: JingDongClient
         detail: Device Detail Info
 
     Returns:
