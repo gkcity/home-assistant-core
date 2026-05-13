@@ -37,7 +37,7 @@ DATA_SCHEMA_AUTH_TYPE = vol.Schema({
 })
 
 # 2. 中控屏IP输入Schema
-DATA_SCHEMA_CENTRAL_SCREEN_IP = vol.Schema({
+DATA_SCHEMA_SCREEN_IP = vol.Schema({
     vol.Required(JD_SCREEN_IP): str
 })
 
@@ -55,6 +55,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for JingDong XIoT."""
 
     VERSION = 1
+    MINOR_VERSION = 0
+    CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
     def __init__(self) -> None:
         """Initialize flow."""
@@ -74,25 +76,33 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._selected_house: JoyHouse | None = None  # 选中的房屋
 
     async def async_step_user(self, user_input=None):
+        """Step 0: 入口步骤，直接跳转到认证类型选择步骤."""
+        return await self.async_step_auth()
+
+    # 方法名称必须是：async_step_{id}
+    async def async_step_auth(self, user_input=None):
         """Step 1: 选择认证类型 (入口步骤)."""
+        errors = {}
+
         if user_input is not None:
             self._auth_type = user_input[JD_AUTH_TYPE]
             # 根据认证类型跳转到对应步骤
             if self._auth_type == JD_AUTH_TYPE_SCREEN:
-                return await self.async_step_screen_ip()
+                return await self.async_step_screen()
             if self._auth_type == JD_AUTH_TYPE_ACCOUNT:
                 return await self.async_step_account()
             if self._auth_type == JD_AUTH_TYPE_ACCOUNT_WITH_SIGNATURE:
                 return await self.async_step_account_with_signature()
 
-        # 显示认证类型选择表单
+        # 显示认证类型选择表单，step_id必须和方法保持一致
         return self.async_show_form(
             step_id="auth",
             data_schema=DATA_SCHEMA_AUTH_TYPE,
+            errors=errors,
         )
 
     # ==================== 中控屏认证分支 ====================
-    async def async_step_screen_ip(self, user_input=None):
+    async def async_step_screen(self, user_input=None):
         """Step 2 (中控屏): 输入中控屏IP."""
         errors = {}
 
@@ -108,7 +118,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="screen",
-            data_schema=DATA_SCHEMA_CENTRAL_SCREEN_IP,
+            data_schema=DATA_SCHEMA_SCREEN_IP,
             errors=errors,
         )
 
@@ -137,7 +147,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="account",
             data_schema=DATA_SCHEMA_COOKIE,
             errors=errors,
-            description_placeholders={"url": "https://xiot-debugger.jd.com/"},
+            description_placeholders={
+                "url": "https://xiot-debugger.jd.com/"
+            },
         )
 
     # ==================== 账号认证分支(AIPC) ====================
@@ -148,7 +160,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             # 只有在用户输入后才初始化session（此时hass已正确注入）
             self._session = JingDongClient(self.hass)
-            self._cookie = "wskey=" + user_input[JD_COOKIE]
+            self._cookie = "wskey=" + user_input[JD_WSKEY]
 
             # 验证Cookie并获取房屋列表
             valid, houses = await self._session.async_get_houses(self._cookie, True)
@@ -170,6 +182,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     # ==================== 账号认证：通用房屋选择步骤 ====================
     async def async_step_account_house(self, user_input=None):
         """Step 3 (账号): 选择房屋."""
+        errors = {}
+
         if user_input is not None:
             selected_house_id = user_input[JD_SELECTED_HOUSE_ID]
 
@@ -193,15 +207,18 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # 构建房屋选择选项
         house_options = {house["id"]: house["name"] for house in self._houses}
         return self.async_show_form(
-            step_id="house",
+            step_id="account_house",
             data_schema=vol.Schema({
                 vol.Required(JD_SELECTED_HOUSE_ID): vol.In(house_options)
             }),
+            errors=errors,
         )
 
     # ==================== 通用设备选择步骤 ====================
     async def async_step_devices(self, user_input=None):
         """Step 2: Select devices to add."""
+        errors = {}
+
         if user_input is not None:
             self._selected_device_ids = user_input[JD_SELECTED_DEVICE_IDS]
 
@@ -214,32 +231,24 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data=config_data
             )
 
-            # # 创建配置条目
-            # return self.async_create_entry(
-            #     title="JingDong XIoT (" + self._screen_ip + ")",
-            #     data={
-            #         JD_SCREEN_IP: self._screen_ip,
-            #         JD_SELECTED_DEVICE_IDS: self._selected_device_ids,
-            #     },
-            # )
-
         # 构建设备多选框
         device_options = {
-            str(
-                device["did"]
-            ): f"{device['additional']['name']} (str({device['summary'].type}))"
+            str(device["did"]): f"{device['additional']['name']} ({device['summary'].type})"
             for device in self._devices
         }
-
-        default_selected = list(device_options.keys())  # 提取所有设备ID作为默认选中项
+        default_selected = list(device_options.keys())
 
         return self.async_show_form(
             step_id="devices",
             data_schema=vol.Schema(
                 {
-                    vol.Required(JD_SELECTED_DEVICE_IDS, default=default_selected): cv.multi_select(device_options)
+                    vol.Required(
+                        JD_SELECTED_DEVICE_IDS,
+                        default=default_selected
+                    ): cv.multi_select(device_options)
                 }
             ),
+            errors=errors,
         )
 
     @staticmethod
