@@ -25,18 +25,6 @@ _LOGGER = logging.getLogger(__name__)
 class JingdongClientAccountImpl(JingDongClient):
     """JingDong Client Account implementation."""
 
-    async def __request(self, method: str, url: str, **kwargs) -> ClientResponse:
-        """Make an HTTP request with the cookie."""
-        headers = kwargs.pop("headers", {})
-
-        if self.data is not None:
-            headers["Cookie"] = self.data.account_cookie
-        else:
-            _LOGGER.error("Cookie is None")
-
-        kwargs["headers"] = headers
-        return await self.session.request(method, url, **kwargs)
-
     async def async_get_houses(self) -> tuple[bool, list[JoyHouse]]:
         """Get Houses from Cloud API."""
         headers = {"Cookie": self.data.account_cookie}
@@ -203,3 +191,15 @@ class JingdongClientAccountImpl(JingDongClient):
         except ClientError as e:
             _LOGGER.error("Error get devices by house: %s", e)
             return []
+
+    async def __request(self, method: str, url: str, **kwargs) -> ClientResponse:
+        """Make an HTTP request with the cookie."""
+        headers = kwargs.pop("headers", {})
+
+        if self.data is not None:
+            headers["Cookie"] = self.data.account_cookie
+        else:
+            _LOGGER.error("Cookie is None")
+
+        kwargs["headers"] = headers
+        return await self.session.request(method, url, **kwargs)

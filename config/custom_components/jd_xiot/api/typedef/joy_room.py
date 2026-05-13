@@ -36,9 +36,9 @@ def joy_room_decode_array(json_array: list[dict[str, Any]]) -> list[JoyRoom]:
 
         # 校验字段类型（id必须是int，name必须是str）
         try:
-            room_id: int = int(item["roomId"])
-            room_name: str = str(item["name"])
-            devices: list[JoyDevice] = joy_device_decode_array(item["devices"])
+            room_id: int = int(item.get("roomId", 0))
+            room_name: str = str(item.get("name", ""))
+            devices: list[JoyDevice] = joy_device_decode_array(item.get("devices", []))
         except (TypeError, ValueError) as e:
             raise ValueError(
                 f"第{idx}个房源数据字段类型错误: roomId必须为整数, name必须为字符串。错误详情: {e}"
