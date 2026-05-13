@@ -21,7 +21,11 @@ from .api.const import (
     JD_WSKEY,
 )
 from .api.jd_client import JingDongClient
-from .api.jd_config_data import JdConfigData, jd_config_data_encode
+from .api.jd_config_data import (
+    JdConfigData,
+    jd_config_data_decode,
+    jd_config_data_encode,
+)
 from .api.typedef.joy_device_detail import JoyDeviceDetail
 from .api.typedef.joy_house import JoyHouse
 
@@ -291,7 +295,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self._config_entry = config_entry
+        self._data: JdConfigData = jd_config_data_decode(config_entry.data)
 
         # 通用属性
         self._session: JingDongClient | None = None
@@ -302,11 +306,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         """Initialize options flow (入口)."""
 
         # 从现有配置条目获取已保存的配置
-        self._selected_device_ids = self._config_entry.data.get(JD_SELECTED_DEVICE_IDS, [])
+        self._selected_device_ids = self._data.devices
 
         # 重新拉取最新设备列表
-        self._session = JingDongClient(self.hass)
-        # self._devices = await self._session.async_get_devices_by_local(self._screen_ip)
+        self._session = JingDongClient(self.hass, data = self._data)
         self._devices = await self._session.async_get_devices()
 
         # 进入设备选择步骤
@@ -316,7 +319,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         """Options flow: 重新选择设备."""
         if user_input is not None:
             # 更新配置条目的 data（也可以使用 options，这里与你现有逻辑保持一致）
-            new_data = {**self.config_entry.data, JD_SELECTED_DEVICE_IDS: user_input[JD_SELECTED_DEVICE_IDS]}
+            # new_data = {**self.config_entry.data, JD_SELECTED_DEVICE_IDS: user_input[JD_SELECTED_DEVICE_IDS]}
+            self._data.devices = user_input[JD_SELECTED_DEVICE_IDS]
+            new_data = jd_config_data_encode(self._data)
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
             # 重载集成使新选择生效
             await self.hass.config_entries.async_reload(self.config_entry.entry_id)

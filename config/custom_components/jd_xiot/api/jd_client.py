@@ -45,6 +45,11 @@ class JingDongClient:
             _LOGGER.info("Use existing session")
             self._session = session
 
+    @property
+    def data(self) -> JdConfigData | None:
+        """Get Config Data."""
+        return self._data
+
     async def _request(self, method: str, url: str, **kwargs) -> ClientResponse:
         """Make an HTTP request with the cookie."""
         headers = kwargs.pop("headers", {})

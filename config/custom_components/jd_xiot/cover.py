@@ -9,7 +9,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .api.const import JD_SELECTED_DEVICE_IDS
 from .api.jd_client import JingDongClient
 from .api.typedef.joy_device_detail import JoyDeviceDetail
 from .entities.cover.jd_cover_mapping import create_cover_entity
@@ -31,7 +30,7 @@ async def async_setup_entry(
     client: JingDongClient = entry.runtime_data
 
     # 2. 从 entry.data 获取保存的设备ID列表（添加集成时选择的设备）
-    selected_device_ids: list[str] = entry.data.get(JD_SELECTED_DEVICE_IDS, [])
+    selected_device_ids: list[str] = client.data.devices
 
     _LOGGER.info("Selected device IDs for JD XIoT: %s", selected_device_ids)
 
