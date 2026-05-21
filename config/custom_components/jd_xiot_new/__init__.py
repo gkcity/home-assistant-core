@@ -14,7 +14,7 @@ from .api.jd_config_view import register_jd_config_api
 _LOGGER = logging.getLogger(__name__)
 
 # 支持的设备类型列表
-_PLATFORMS: list[Platform] = [Platform.LIGHT, Platform.SWITCH, Platform.COVER]
+_PLATFORMS: list[Platform] = [Platform.LIGHT, Platform.SWITCH, Platform.COVER, Platform.MEDIA_PLAYER]
 
 # 定义配置条目的类型
 type JdXiotConfigEntry = ConfigEntry[JingDongClient]
