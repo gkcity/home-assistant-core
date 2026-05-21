@@ -54,14 +54,13 @@ class DeviceJdzhp02qsEntity(MediaPlayerEntity):
 
         # 支持：打开、关闭、暂停、百分比位置
         self._attr_supported_features = (
-            MediaPlayerEntityFeature.PLAY
-            # | MediaPlayerEntityFeature.PAUSE
-            # | MediaPlayerEntityFeature.STOP
-            # | MediaPlayerEntityFeature.VOLUME_SET
-            # | MediaPlayerEntityFeature.VOLUME_MUTE
-            # | MediaPlayerEntityFeature.NEXT_TRACK
-            # | MediaPlayerEntityFeature.PREVIOUS_TRACK
-            # | MediaPlayerEntityFeature.SELECT_SOURCE  # 切换音源/模式
+            MediaPlayerEntityFeature.PLAY_MEDIA
+                # MediaPlayerEntityFeature.PLAY
+                # | MediaPlayerEntityFeature.PAUSE
+                # | MediaPlayerEntityFeature.STOP
+                # | MediaPlayerEntityFeature.VOLUME_SET
+                # | MediaPlayerEntityFeature.VOLUME_MUTE
+                # | MediaPlayerEntityFeature.PLAY_MEDIA
         )
 
         # 初始状态
@@ -104,47 +103,63 @@ class DeviceJdzhp02qsEntity(MediaPlayerEntity):
         """Play."""
         _LOGGER.info("Play: %s", self._attr_unique_id)
 
-        # 从 kwargs 中获取媒体地址
-        media_url = kwargs.get("media_id", "") or kwargs.get("url", "")
-
-        # 如果没有传入 URL，直接返回
-        if not media_url:
-            _LOGGER.warning("Url not found!")
-            return
+        self._attr_state = MediaPlayerState.PLAYING
 
         try:
-            await self._device.service_voice().action_say().invoke(0, media_url)
+            # await self._device.service_voice().action_say().invoke(0, media_url)
             self._attr_state = MediaPlayerState.PLAYING
         except ValueError as e:
             _LOGGER.error("Play failed: %s", e)
         self.async_write_ha_state()
 
-    # # ------------------------------------------------------
-    # # 核心：暂停媒体
-    # # ------------------------------------------------------
-    # async def async_media_pause(self, **kwargs: Any) -> None:
-    #     """暂停媒体"""
-    #     _LOGGER.info("媒体播放器暂停: %s", self._attr_unique_id)
-    #     try:
-    #         await self._device.service_media().action_pause().invoke()
-    #         self._attr_state = MediaPlayerState.PAUSED
-    #     except ValueError as e:
-    #         _LOGGER.error("暂停媒体失败: %s", e)
-    #     self.async_write_ha_state()
-    #
-    # # ------------------------------------------------------
-    # # 核心：停止媒体
-    # # ------------------------------------------------------
-    # async def async_media_stop(self, **kwargs: Any) -> None:
-    #     """停止媒体"""
-    #     _LOGGER.info("媒体播放器停止: %s", self._attr_unique_id)
-    #     try:
-    #         await self._device.service_media().action_stop().invoke()
-    #         self._attr_state = MediaPlayerState.STOPPED
-    #     except ValueError as e:
-    #         _LOGGER.error("停止媒体失败: %s", e)
-    #     self.async_write_ha_state()
-    #
+    # ------------------------------------------------------
+    # 【关键】真正能接收 URL 的方法
+    # ------------------------------------------------------
+    async def async_play_media(
+            self,
+            media_type: str,
+            media_id: str,
+            **kwargs: Any
+    ) -> None:
+        """Play Media."""
+
+        _LOGGER.info("Play Media: %s", media_type)
+        _LOGGER.info("URL: %s", media_id)  # <--- 这里就是你要的 URL！
+
+        try:
+            # 直接把 URL 传给设备
+            await self._device.service_voice().action_say().invoke(0, media_id)
+            self._attr_state = MediaPlayerState.PLAYING
+            self.async_write_ha_state()
+        except ValueError as e:
+            _LOGGER.error("播放失败: %s", e)
+
+    # ------------------------------------------------------
+    # 核心：暂停媒体
+    # ------------------------------------------------------
+    async def async_media_pause(self, **kwargs: Any) -> None:
+        """Pause."""
+        _LOGGER.info("Pause: %s", self._attr_unique_id)
+        try:
+            # await self._device.service_media().action_pause().invoke()
+            self._attr_state = MediaPlayerState.PAUSED
+        except ValueError as e:
+            _LOGGER.error("暂停媒体失败: %s", e)
+        self.async_write_ha_state()
+
+    # ------------------------------------------------------
+    # 核心：停止媒体
+    # ------------------------------------------------------
+    async def async_media_stop(self, **kwargs: Any) -> None:
+        """Stop."""
+        _LOGGER.info("Stop: %s", self._attr_unique_id)
+        try:
+            # await self._device.service_media().action_stop().invoke()
+            self._attr_state = MediaPlayerState.STANDBY
+        except ValueError as e:
+            _LOGGER.error("停止媒体失败: %s", e)
+        self.async_write_ha_state()
+
     # # ------------------------------------------------------
     # # 核心：下一曲
     # # ------------------------------------------------------
@@ -171,36 +186,36 @@ class DeviceJdzhp02qsEntity(MediaPlayerEntity):
     #     except ValueError as e:
     #         _LOGGER.error("上一曲失败: %s", e)
     #     self.async_write_ha_state()
-    #
-    # # ------------------------------------------------------
-    # # 核心：设置音量（0.0~1.0）
-    # # ------------------------------------------------------
-    # async def async_set_volume_level(self, volume: float, **kwargs: Any) -> None:
-    #     """设置音量"""
-    #     _LOGGER.info("设置媒体播放器音量: %s -> %s", self._attr_unique_id, volume)
-    #     try:
-    #         # 转换为设备需要的音量范围（如0~100）
-    #         volume_percent = int(volume * 100)
-    #         await self._device.service_media().property_volume().set(volume_percent)
-    #         self._attr_volume_level = volume
-    #         self._attr_is_volume_muted = False  # 调整音量时取消静音
-    #     except ValueError as e:
-    #         _LOGGER.error("设置音量失败: %s", e)
-    #     self.async_write_ha_state()
-    #
-    # # ------------------------------------------------------
-    # # 核心：静音/取消静音
-    # # ------------------------------------------------------
-    # async def async_mute_volume(self, mute: bool, **kwargs: Any) -> None:
-    #     """静音/取消静音"""
-    #     _LOGGER.info("媒体播放器静音: %s -> %s", self._attr_unique_id, mute)
-    #     try:
-    #         await self._device.service_media().property_mute().set(mute)
-    #         self._attr_is_volume_muted = mute
-    #     except ValueError as e:
-    #         _LOGGER.error("设置静音失败: %s", e)
-    #     self.async_write_ha_state()
-    #
+
+    # ------------------------------------------------------
+    # 核心：设置音量（0.0~1.0）
+    # ------------------------------------------------------
+    async def async_set_volume_level(self, volume: float, **kwargs: Any) -> None:
+        """SetVolume."""
+        _LOGGER.info("设置媒体播放器音量: %s -> %s", self._attr_unique_id, volume)
+        try:
+            # 转换为设备需要的音量范围（如0~100）
+            # volume_percent = int(volume * 100)
+            # await self._device.service_media().property_volume().set(volume_percent)
+            self._attr_volume_level = volume
+            self._attr_is_volume_muted = False  # 调整音量时取消静音
+        except ValueError as e:
+            _LOGGER.error("SetVolume Failed: %s", e)
+        self.async_write_ha_state()
+
+    # ------------------------------------------------------
+    # 核心：静音/取消静音
+    # ------------------------------------------------------
+    async def async_mute_volume(self, mute: bool, **kwargs: Any) -> None:
+        """Mute."""
+        _LOGGER.info("Mute: %s -> %s", self._attr_unique_id, mute)
+        try:
+            # await self._device.service_media().property_mute().set(mute)
+            self._attr_is_volume_muted = mute
+        except ValueError as e:
+            _LOGGER.error("Mute Failed: %s", e)
+        self.async_write_ha_state()
+
     # # ------------------------------------------------------
     # # 核心：切换音源
     # # ------------------------------------------------------
@@ -230,7 +245,7 @@ class DeviceJdzhp02qsEntity(MediaPlayerEntity):
     # ------------------------------------------------------
     async def async_update(self) -> None:
         """Update."""
-        _LOGGER.debug("更新媒体播放器状态: %s", self._attr_unique_id)
+        _LOGGER.debug("Update: %s", self._attr_unique_id)
 
         if not self._device:
             self._attr_available = False
