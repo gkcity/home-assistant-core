@@ -3,6 +3,8 @@
 from typing import Any, TypedDict
 
 from xiot_core.spec.codec.summary.summary_codec import SummaryCodec
+
+# from .summary import Summary, summary_decode
 from xiot_core.spec.typedef.summary.summary import Summary
 
 
@@ -104,10 +106,10 @@ def joy_device_additional_decode_safe(
     except (KeyError, TypeError, ValueError):
         return None
 
-def joy_device_detail_decode_array_from_local(data: list[Any]) -> list[JoyDeviceDetail]:
+def joy_device_detail_decode_array_local(data: list[Any]) -> list[JoyDeviceDetail]:
     """Convert a list to JoyDeviceDetail Array. Strict type checking: raises KeyError if fields missing."""
 
-    return [joy_device_detail_decode_from_local(item) for item in data]
+    return [joy_device_detail_decode_local(item) for item in data]
 
 #     {
 #       "device": {
@@ -116,7 +118,7 @@ def joy_device_detail_decode_array_from_local(data: list[Any]) -> list[JoyDevice
 #       },
 #       "additional": {...}
 #     }
-def joy_device_detail_decode_from_local(data: dict[str, Any]) -> JoyDeviceDetail:
+def joy_device_detail_decode_local(data: dict[str, Any]) -> JoyDeviceDetail:
     """Convert a dict to JoyDeviceDetail. Strict type checking: raises KeyError if fields missing."""
 
     # 强制获取字段，不存在直接抛 KeyError（强类型风格）
@@ -143,34 +145,17 @@ def joy_device_detail_decode_from_local(data: dict[str, Any]) -> JoyDeviceDetail
         did=did, userDeviceId=user_device_id, summary=summary, additional=additional
     )
 
-def joy_device_detail_decode_array_from_cloud(data: list[Any]) -> list[JoyDeviceDetail]:
+def joy_device_detail_decode_array(data: list[Any]) -> list[JoyDeviceDetail]:
     """Convert a list to JoyDeviceDetail Array. Strict type checking: raises KeyError if fields missing."""
 
-    return [joy_device_detail_decode_from_cloud(item) for item in data]
+    return [joy_device_detail_decode(item) for item in data]
 
-# {
-#         "summary": {
-#           "members": [],
-#           "online": false,
-#           "type": "urn:jd-spec:device:gateway:0000012d:jd:jdzhp02qs:1"
-#         },
-#         "additional": {
-#           "productId": 14775695,
-#           "modelId": 0,
-#           "name": "京东生活家智慧屏12英寸",
-#           "userDeviceId": 4681,
-#           "favorite": false,
-#           "jdMpAppId": "",
-#           "isFavorite": false
-#         },
-#         "userDeviceId": 4681,
-#         "did": "00@10wHh"
-# }
-def joy_device_detail_decode_from_cloud(data: dict[str, Any]) -> JoyDeviceDetail:
+def joy_device_detail_decode(data: dict[str, Any]) -> JoyDeviceDetail:
     """Convert a dict to JoyDeviceDetail. Strict type checking: raises KeyError if fields missing."""
 
     # 强制获取字段，不存在直接抛 KeyError（强类型风格）
-    _summary = data.get("summary", {})
+    _device = data.get("device", {})
+    _summary = _device.get("summary", {})
 
     did: str = data["did"]
     user_device_id: int = data["userDeviceId"]

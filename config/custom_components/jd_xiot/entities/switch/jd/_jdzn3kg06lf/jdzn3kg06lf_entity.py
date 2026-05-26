@@ -53,8 +53,8 @@ class DeviceJdzn3kg06lfEntity1(SwitchEntity):
         self._attr_device_info = DeviceInfo(
             identifiers = {(DOMAIN, detail["did"])},
             name = detail['additional']['name'],
-            manufacturer = "京东小家",
-            model = f"{detail["summary"].type.model}",
+            manufacturer = "京东智能",
+            model = f"Switch {detail["did"]}",
         )
 
         if isinstance(controller, DeviceJdzn3kg06lf):
@@ -153,8 +153,8 @@ class DeviceJdzn3kg06lfEntity2(SwitchEntity):
         self._attr_device_info = DeviceInfo(
             identifiers = {(DOMAIN, detail["did"])},
             name = detail['additional']['name'],
-            manufacturer = "京东小家",
-            model = f"{detail["summary"].type.model}",
+            manufacturer = "京东智能",
+            model = f"Switch {detail["did"]}",
         )
 
         if isinstance(controller, DeviceJdzn3kg06lf):
@@ -253,8 +253,8 @@ class DeviceJdzn3kg06lfEntity3(SwitchEntity):
         self._attr_device_info = DeviceInfo(
             identifiers = {(DOMAIN, detail["did"])},
             name = detail['additional']['name'],
-            manufacturer = "京东小家",
-            model = f"{detail["summary"].type.model}",
+            manufacturer = "京东智能",
+            model = f"Switch {detail["did"]}",
         )
 
         if isinstance(controller, DeviceJdzn3kg06lf):

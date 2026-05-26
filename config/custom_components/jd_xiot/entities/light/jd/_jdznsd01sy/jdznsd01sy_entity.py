@@ -76,8 +76,8 @@ class DeviceJdznsd01syEntity(LightEntity):
         self._attr_device_info = DeviceInfo(
             identifiers = {(DOMAIN, detail["did"])},
             name = detail['additional']['name'],
-            manufacturer = "京东小家",
-            model = f"{detail["summary"].type.model}",
+            manufacturer = "京东智能",
+            model = f"Cover {detail["did"]}",
         )
 
         if isinstance(controller, DeviceJdznsd01sy):

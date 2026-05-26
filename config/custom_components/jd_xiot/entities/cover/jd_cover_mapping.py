@@ -35,7 +35,7 @@ def create_cover_entity(
 
     Args:
         device_type: Device Type
-        client: JingDongClient
+        client: JingDongClientSession
         detail: Device Detail Info
 
     Returns:
