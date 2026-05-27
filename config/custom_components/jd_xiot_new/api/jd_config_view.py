@@ -12,19 +12,19 @@ _LOGGER = logging.getLogger(__name__)
 
 class JingdongConfigView(HomeAssistantView):
     """Jingdong Config Http Service."""
-    url = "/api/jd_xiot/config"
-    name = "api:jd_xiot:config"
+    url = "/api/jd_xiot_new/config"
+    name = "api:jd_xiot_new:config"
     requires_auth = False  # 测试用，正式环境建议开启 auth
 
     async def get(self, request):
-        """GET /api/jd_xiot/config."""
+        """GET /api/jd_xiot_new/config."""
         hass = request.app["hass"]
 
-        # 找到 jd_xiot 配置条目
-        entries = hass.config_entries.async_entries("jd_xiot")
+        # 找到 jd_xiot_new 配置条目
+        entries = hass.config_entries.async_entries("jd_xiot_new")
         if not entries:
-            _LOGGER.debug("Not Found jd_xiot entries: %s", len(entries))
-            return web.json_response({"error": "jd_xiot not found"}, status=404)
+            _LOGGER.debug("Not Found jd_xiot_new entries: %s", len(entries))
+            return web.json_response({"error": "jd_xiot_new not found"}, status=404)
 
         entry = entries[0]
         # 关键修复：将 mappingproxy 转为普通字典
@@ -38,7 +38,7 @@ class JingdongConfigView(HomeAssistantView):
         })
 
     async def post(self, request):
-        """POST /api/jd_xiot/config."""
+        """POST /api/jd_xiot_new/config."""
         hass = request.app["hass"]
         try:
             data = await request.json()
@@ -48,9 +48,9 @@ class JingdongConfigView(HomeAssistantView):
                 status=400
             )
 
-        entries = hass.config_entries.async_entries("jd_xiot")
+        entries = hass.config_entries.async_entries("jd_xiot_new")
         if not entries:
-            return web.json_response({"error": "jd_xiot not found"}, status=404)
+            return web.json_response({"error": "jd_xiot_new not found"}, status=404)
 
         entry = entries[0]
 
@@ -78,7 +78,7 @@ class JingdongConfigView(HomeAssistantView):
             })
         except HomeAssistantError as e:
             # 捕获更新过程中的异常，返回友好提示
-            _LOGGER.error("Update jd_xiot config failed: %s", str(e))
+            _LOGGER.error("Update jd_xiot_new config failed: %s", str(e))
             return web.json_response(
                 {"error": f"更新配置失败: {e!s}"},
                 status=500

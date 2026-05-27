@@ -1,5 +1,6 @@
 """Light DeviceJdznxtd03sy."""
 
+import asyncio
 import logging
 
 from custom_components.jd_xiot_new.api.const import DOMAIN
@@ -142,6 +143,8 @@ class DeviceJdznxtd03syEntity(LightEntity):
         _LOGGER.info("Update")
 
         try:
+            await asyncio.sleep(1)
+
             onoff = await self._device.service_light().property_on().get()
             self._attr_is_on = bool(onoff)
 

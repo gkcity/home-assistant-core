@@ -31,7 +31,7 @@ class JingDongClientLocalImpl(JingDongClient):
 
     async def async_get_devices(self) -> list[JoyDeviceDetail]:
         """Get Devices."""
-        _LOGGER.info("GetDevices from: %s", self.data.screen_ip)
+        _LOGGER.debug("GetDevices from: %s", self.data.screen_ip)
         url = f'http://{self.data.screen_ip}:8080/device/v1/devices'
         try:
             async with self.session.get(url=url, timeout=self.timeout) as resp:
@@ -39,11 +39,11 @@ class JingDongClientLocalImpl(JingDongClient):
                     data = await resp.json(content_type=None)
                     if data.get("msg") == 'ok':
                         devices: list[JoyDeviceDetail] = joy_device_detail_decode_array_from_local(data.get("data", []))
-                        _LOGGER.info("Devices.length: %d", len(devices))
+                        _LOGGER.debug("Devices.length: %d", len(devices))
                         return devices
                     _LOGGER.error("Get Device By Local: %s", data.get("msg", ""))
                 else:
-                    _LOGGER.info("Status: %d", resp.status)
+                    _LOGGER.debug("Status: %d", resp.status)
                 return []
         except ClientError as e:
             _LOGGER.error("Error get devices by local: %s", e)

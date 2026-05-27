@@ -242,7 +242,7 @@ class JingdongClientAccountWithSignatureImpl(JingDongClient):
             devices: list[JoyDeviceDetail] = joy_device_detail_decode_array_from_cloud(
                 data.get("data", {}).get("devices", [])
             )
-            _LOGGER.info("Devices.length: %d", len(devices))
+            _LOGGER.debug("Devices.length: %d", len(devices))
         except ClientError as e:
             _LOGGER.error("Error GetDevices: %s", e)
             return []

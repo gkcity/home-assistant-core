@@ -178,7 +178,7 @@ class JingdongClientAccountImpl(JingDongClient):
                         devices: list[JoyDeviceDetail] = joy_device_detail_decode_array_from_cloud(
                             data.get("data", {}).get("devices", [])
                         )
-                        _LOGGER.info("Devices.length: %d", len(devices))
+                        _LOGGER.debug("Devices.length: %d", len(devices))
                         return devices
                     _LOGGER.error(
                         "GetDevicesByHouse, code: %d, message: %s",
@@ -186,7 +186,7 @@ class JingdongClientAccountImpl(JingDongClient):
                         data.get("message"),
                     )
                 else:
-                    _LOGGER.info("Status: %d", resp.status)
+                    _LOGGER.debug("Status: %d", resp.status)
                 return []
         except ClientError as e:
             _LOGGER.error("Error get devices by house: %s", e)

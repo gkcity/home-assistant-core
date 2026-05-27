@@ -86,7 +86,7 @@ class JingDongClient:
     # GET http://10.10.10.141:8080/device/v1/devices
     async def async_get_devices_by_local(self, ip: str) -> list[JoyDeviceDetail]:
         """Get Devices from Central Screen."""
-        _LOGGER.info("Get Devices By Local: %s", ip)
+        _LOGGER.debug("Get Devices By Local: %s", ip)
         url = f'http://{ip}:8080/device/v1/devices'
         try:
             async with self._session.get(url = url, timeout = self._timeout) as resp:
@@ -94,11 +94,11 @@ class JingDongClient:
                     data = await resp.json(content_type=None)
                     if data.get("msg") == 'ok':
                         devices: list[JoyDeviceDetail] = joy_device_detail_decode_array_local(data.get("data", []))
-                        _LOGGER.info("Devices.length: %d", len(devices))
+                        _LOGGER.debug("Devices.length: %d", len(devices))
                         return devices
                     _LOGGER.error("Get Device By Local: %s", data.get("msg", ""))
                 else:
-                    _LOGGER.info("Status: %d", resp.status)
+                    _LOGGER.debug("Status: %d", resp.status)
                 return []
         except ClientError as e:
             _LOGGER.error("Error get devices by local: %s", e)
@@ -106,7 +106,7 @@ class JingDongClient:
 
     async def async_get_devices_by_house(self, cookie: str, house: JoyHouse) -> list[JoyDeviceDetail]:
         """Get Devices from Cloud API."""
-        _LOGGER.info("Get Device By House")
+        _LOGGER.debug("Get Device By House")
         headers = {"Cookie": cookie}
         body_dict = {"userDeviceIds": get_all_user_device_ids(house)}
         body_json = json.dumps(body_dict, separators=(",", ":"))
@@ -123,7 +123,7 @@ class JingDongClient:
                         devices: list[JoyDeviceDetail] = joy_device_detail_decode_array(
                             data.get("data", {}).get("devices", [])
                         )
-                        _LOGGER.info("Devices.length: %d", len(devices))
+                        _LOGGER.debug("Devices.length: %d", len(devices))
                         return devices
                     _LOGGER.error(
                         "GetDevicesByHouse, code: %d, message: %s",
@@ -131,7 +131,7 @@ class JingDongClient:
                         data.get("message"),
                     )
                 else:
-                    _LOGGER.info("Status: %d", resp.status)
+                    _LOGGER.debug("Status: %d", resp.status)
                 return []
         except ClientError as e:
             _LOGGER.error("Error get devices by house: %s", e)
@@ -180,13 +180,13 @@ class JingDongClient:
             # 1. 编码得到字典后，转为JSON字符串
             body_dict = PropertyOperationCodec.Set.QUERY.encode([p])
             body_json = json.dumps(body_dict, separators=(",", ":"))
-            _LOGGER.info("SetProperty.Request: %s", body_json)
+            _LOGGER.debug("SetProperty.Request: %s", body_json)
             url = f'http://{self._ip}:8080/device/v1/properties'
             # 2. 设置JSON请求头 + 传入字符串类型的body
             headers = {"Content-Type": "application/json"}
             async with self._session.put(url=url, data = body_json, headers = headers, timeout = self._timeout) as resp:
                 data = await resp.json(content_type=None)
-                _LOGGER.info("SetProperty.Response: %s", data)
+                _LOGGER.debug("SetProperty.Response: %s", data)
                 if data.get("msg", "error") == "ok":
                     properties: list[PropertyOperation] = PropertyOperationCodec.Set.RESULT.decode(data.get("data", []))
                     result: PropertyOperation | None = properties[0]
@@ -212,7 +212,7 @@ class JingDongClient:
             "properties": PropertyOperationCodec.Set.QUERY.encode([p]),
         }
         body_json = json.dumps(body_dict, separators=(",", ":"))
-        _LOGGER.info("_set_property_cloud: %s", body_json)
+        _LOGGER.debug("_set_property_cloud: %s", body_json)
         body_encoded = quote(body_json)  # URL 编码
         url = (
             "https://api.m.jd.com/api?functionId=smarthome_app_writeDeviceProperty&appid=device-debugger&body="
@@ -220,7 +220,7 @@ class JingDongClient:
         )
         resp = await self._request("get", url)
         data = await resp.json(content_type=None)
-        _LOGGER.info("SetProperty.Response: %s", data)
+        _LOGGER.debug("SetProperty.Response: %s", data)
         if data.get("code") == "0":
             properties: list[PropertyOperation] = (
                 PropertyOperationCodec.Set.RESULT.decode(
@@ -245,15 +245,15 @@ class JingDongClient:
 
     async def _get_property_local(self, p: PropertyOperation) -> PropertyOperation:
         """Get Property from local."""
-        _LOGGER.info("Get Property from Local")
+        _LOGGER.debug("Get Property from Local")
         try:
             pid = str(p.pid)
-            _LOGGER.info("GetProperty.Request: %s", pid)
+            _LOGGER.debug("GetProperty.Request: %s", pid)
             url = f'http://{self._ip}:8080/device/v1/properties?pid={quote(pid)}'
             headers = {"Content-Type": "application/json"}
             async with self._session.get(url=url, headers = headers, timeout = self._timeout) as resp:
                 data = await resp.json(content_type=None)
-                _LOGGER.info("GetProperty.Response: %s", data)
+                _LOGGER.debug("GetProperty.Response: %s", data)
                 if data.get("msg", "error") == "ok":
                     properties: list[PropertyOperation] = PropertyOperationCodec.Get.RESULT.decode(data.get("data", []))
                     result: PropertyOperation | None = properties[0]
@@ -274,7 +274,7 @@ class JingDongClient:
 
     async def _get_property_cloud(self, p: PropertyOperation) -> PropertyOperation:
         """Get Property from cloud."""
-        _LOGGER.info("Get Property from Cloud")
+        _LOGGER.debug("Get Property from Cloud")
         p.status = -1
         p.description = "not implemented"
         return p
@@ -291,13 +291,13 @@ class JingDongClient:
             # 1. 编码得到字典后，转为JSON字符串
             body_dict = ActionOperationCodec.QUERY.encode([a])
             body_json = json.dumps(body_dict, separators=(",", ":"))
-            _LOGGER.info("InvokeAction.Request: %s", body_json)
+            _LOGGER.debug("InvokeAction.Request: %s", body_json)
             url = f'http://{self._ip}:8080/device/v1/actions'
             # 2. 设置JSON请求头 + 传入字符串类型的body
             headers = {"Content-Type": "application/json"}
             async with self._session.put(url=url, data = body_json, headers = headers) as resp:
                 data = await resp.json(content_type=None)
-                _LOGGER.info("InvokeAction.Response: %s", data)
+                _LOGGER.debug("InvokeAction.Response: %s", data)
                 if data.get("msg", "error") == "ok":
                     actions: list[ActionOperation] = ActionOperationCodec.RESULT.decode(data.get("data", []))
                     result: ActionOperation | None = actions[0]
@@ -318,13 +318,13 @@ class JingDongClient:
 
     async def _invoke_action_cloud(self, a: ActionOperation) -> ActionOperation:
         """Invoke Action to cloud."""
-        _LOGGER.info("Invoke Action to Cloud")
+        _LOGGER.debug("Invoke Action to Cloud")
         body_dict = {
             "userDeviceId": a.context,
             "actions": ActionOperationCodec.QUERY.encode([a]),
         }
         body_json = json.dumps(body_dict, separators=(",", ":"))
-        _LOGGER.info("InvokeAction: %s", body_json)
+        _LOGGER.debug("InvokeAction: %s", body_json)
         body_encoded = quote(body_json)  # URL 编码
         url = (
             "https://api.m.jd.com/api?functionId=smarthome_app_invokeDeviceAction&appid=device-debugger&body="
@@ -332,7 +332,7 @@ class JingDongClient:
         )
         resp = await self._request("get", url)
         data = await resp.json(content_type=None)
-        _LOGGER.info("InvokeAction.Response: %s", data)
+        _LOGGER.debug("InvokeAction.Response: %s", data)
         if data.get("code") == "0":
             actions: list[ActionOperation] = (
                 ActionOperationCodec.RESULT.decode(

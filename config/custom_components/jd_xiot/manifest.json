@@ -18,6 +18,6 @@
     "xiot-core-device-controller>=0.0.16"
   ],
   "ssdp": [],
-  "version": "0.1.8",
+  "version": "0.1.9",
   "zeroconf": []
 }
