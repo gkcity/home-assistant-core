@@ -96,6 +96,13 @@ class DeviceJdzhp01qsEntity(MediaPlayerEntity):
             self._attr_available = False
             _LOGGER.error("媒体播放器控制器类型不匹配: %s", type(controller).__name__)
 
+    @property
+    def extra_state_attributes(self):
+        """Extra Attributes."""
+        return {
+            "ip": self._client.ip,
+        }
+
     # # ------------------------------------------------------
     # # 核心：播放媒体
     # # ------------------------------------------------------

@@ -25,6 +25,11 @@ class JingDongClient(ABC):
         self.__session = aiohttp_client.async_get_clientsession(hass)
 
     @property
+    def ip(self) -> str:
+        """Get IP Address."""
+        return self.__data.screen_ip
+
+    @property
     def data(self) -> JdConfigData:
         """Get Config Data."""
         return self.__data

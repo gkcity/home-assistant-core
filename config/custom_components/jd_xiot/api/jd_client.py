@@ -44,6 +44,13 @@ class JingDongClient:
             _LOGGER.info("Use existing session")
             self._session = session
 
+    @property
+    def screen_ip(self) -> str:
+        """Get IP."""
+        if self._ip is not None:
+            return self._ip
+        return ""
+
     async def _request(self, method: str, url: str, **kwargs) -> ClientResponse:
         """Make an HTTP request with the cookie."""
         headers = kwargs.pop("headers", {})
